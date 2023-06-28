@@ -9,6 +9,10 @@ module townesquare_sc::townesquare {
     }
 
     struct Post has key, store {
-
+        owner: address,
+        userId: String,
+        content: String,
+        postId: String,
+        isDeleted: bool
     }
 }
