@@ -9,6 +9,7 @@ module townesquare_sc::townesquare {
     const E_NOT_INITIALIZED: u64 = 1;
     const EPOST_DOESNT_EXIST: u64 = 2;
     const EPOST_IS_DELETED: u64 = 3;
+    const ENOT_GENESIS_ACCOUNT: u64 = 4;
 
     struct User has key {
         owner: address, // User wallet address
@@ -20,7 +21,6 @@ module townesquare_sc::townesquare {
         poster: address, // poser address
         user_id: String, // user id of our database. It should be string
         posts: Table<String, Post>, // Post list which posted by poster
-        post_event: event::EventHandle<Post>, // event
     }
 
     struct Post has store, drop, copy {
@@ -28,6 +28,27 @@ module townesquare_sc::townesquare {
         group_id: String, // group id which poster post content in group or community
         content: String, // encryption string of content
         is_deleted: bool, // not sure that this field is neccessary or not
+    }
+
+    struct Tables has key {
+        event_table: Table<String, Post>,
+    }
+
+    struct EventHandles has key {
+        event_handle: event::EventHandle<Post>,
+    }
+
+
+    public fun init_event_account(account: &signer) {
+        assert!(signer::address_of(account) == @aptos_demo, ENOT_GENESIS_ACCOUNT);
+        move_to(account, EventHandles {
+            event_handle: account::new_event_handle<Post>(account),
+        });
+    }
+
+    public(friend) fun emit_order_created(post_created: Post) acquires EventHandles {
+        let events = borrow_global_mut<EventHandles>(@aptos_demo);
+        event::emit_event(&mut events.event_handle, post_created);
     }
 
     public entry fun create_user(owner: &signer, username: String, profile_image: String) {
@@ -63,12 +84,11 @@ module townesquare_sc::townesquare {
             poster: poster_address,
             user_id,
             posts: table::new(),
-            post_event: account::new_event_handle<Post>(poster),
         };
         move_to(poster, post_list);
     }
 
-    public entry fun create_post(poster: &signer, post_id: String, group_id: String, content: String) acquires PostList {
+    public entry fun create_post(poster: &signer, post_id: String, group_id: String, content: String) acquires PostList, EventHandles {
         // get the signer address
         let poster_address = signer::address_of(poster);
         assert!(exists<PostList>(poster_address), E_NOT_INITIALIZED);
@@ -82,13 +102,10 @@ module townesquare_sc::townesquare {
         };
         table::upsert(&mut post_list.posts, post_id, new_post);
 
-        event::emit_event<Post>(
-            &mut borrow_global_mut<PostList>(poster_address).post_event,
-            new_post,
-        );
+        emit_order_created(new_post);
     }
 
-    public entry fun delete_post(poster: &signer, post_id: String) acquires PostList {
+    public entry fun delete_post(poster: &signer, post_id: String) acquires PostList, EventHandles {
         // get the signer address
         let poster_address = signer::address_of(poster);
         assert!(exists<PostList>(poster_address), E_NOT_INITIALIZED);
@@ -99,10 +116,6 @@ module townesquare_sc::townesquare {
         assert!(post.is_deleted == false, EPOST_IS_DELETED);
         post.is_deleted = true;
 
-        event::emit_event<Post>(
-            &mut post_list.post_event,
-            *post,
-        );
+        emit_order_created(*post);
     }
-
 }
