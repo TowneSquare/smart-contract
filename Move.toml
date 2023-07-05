@@ -7,4 +7,4 @@ rev = 'main'
 subdir = 'aptos-move/framework/aptos-framework'
 [addresses]
 townesquare_sc='deee649e72444ab1a7b7c5802251efd0030e48b1da75273c8fee0aa42d197fb4'
-aptos_demo='deee649e72444ab1a7b7c5802251efd0030e48b1da75273c8fee0aa42d197fb4'
+townesquare_event='deee649e72444ab1a7b7c5802251efd0030e48b1da75273c8fee0aa42d197fb4'

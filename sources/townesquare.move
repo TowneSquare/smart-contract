@@ -40,14 +40,14 @@ module townesquare_sc::townesquare {
 
 
     public fun init_event_account(account: &signer) {
-        assert!(signer::address_of(account) == @aptos_demo, ENOT_GENESIS_ACCOUNT);
+        assert!(signer::address_of(account) == @townesquare_event, ENOT_GENESIS_ACCOUNT);
         move_to(account, EventHandles {
             event_handle: account::new_event_handle<Post>(account),
         });
     }
 
     public(friend) fun emit_order_created(post_created: Post) acquires EventHandles {
-        let events = borrow_global_mut<EventHandles>(@aptos_demo);
+        let events = borrow_global_mut<EventHandles>(@townesquare_event);
         event::emit_event(&mut events.event_handle, post_created);
     }
 
