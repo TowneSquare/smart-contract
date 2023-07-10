@@ -19,7 +19,6 @@ module townesquare_sc::townesquare {
     }
 
     struct UserList has key {
-        admin: address, // admin address
         users: Table<address, User>, // users list
     }
 
@@ -68,7 +67,6 @@ module townesquare_sc::townesquare {
         });
 
         let user_list = UserList {
-            admin: admin_address,
             users: table::new(),
         };
         move_to(admin, user_list);
