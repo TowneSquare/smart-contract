@@ -6,5 +6,5 @@ git = 'https://github.com/aptos-labs/aptos-core.git'
 rev = 'main'
 subdir = 'aptos-move/framework/aptos-framework'
 [addresses]
-townesquare_sc='deee649e72444ab1a7b7c5802251efd0030e48b1da75273c8fee0aa42d197fb4'
-townesquare='deee649e72444ab1a7b7c5802251efd0030e48b1da75273c8fee0aa42d197fb4'
+townesquare_sc='a672d6c0b603583ac511df95ef664dfa01ff25dda7dd92dda894bba6e106f7f6'
+townesquare='a672d6c0b603583ac511df95ef664dfa01ff25dda7dd92dda894bba6e106f7f6'
