@@ -4,8 +4,9 @@ version = "1.0.0"
 authors = []
 
 [addresses]
-
+townesquare = "0xdcff00d0e671c641636b01bfff65135e12838e09472346ab85ee5a41394e9106"
 [dev-addresses]
+aladeen = "0x438f261f7d74f1b04d3558165b0c91df8caa623f5adb8e3dc6427f8c145fbbbb"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"
