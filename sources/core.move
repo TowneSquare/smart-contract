@@ -3,7 +3,8 @@
 
     TODO:
         - description
-        - add blaclist mechanism from transaction contract
+        - add friends mechanism
+        - add blacklist mechanism from transaction contract
 
 */
 
