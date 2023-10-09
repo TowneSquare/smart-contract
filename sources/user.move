@@ -19,6 +19,7 @@
 
     TODO:
         - add unit tests
+        - authorized borrow to moderators and list of connected users
 */
 
 module townesquare::user {
@@ -28,6 +29,7 @@ module townesquare::user {
     use std::string::{String};
     
     friend townesquare::core;
+    friend townesquare::post;
 
     // -------
     // Structs
@@ -46,6 +48,14 @@ module townesquare::user {
     struct Creator has drop, store, key {}
     struct Moderator has drop, store, key {}
 
+    // Post tracker; used to get creation_num for GUID
+    struct PostTracker has key { 
+        user_addr: address,
+        total_posts_created: u64,
+        // TODO: post_created_events: ,
+        // TODO: post_deleted_events: ,
+    }
+
     // ---------
     // Internals
     // ---------
@@ -63,18 +73,26 @@ module townesquare::user {
         // TODO: init module from tx contracts
         // TODO: store address in a global struct
         let user_addr = signer_addr;
+        // init post tracker
+        move_to(
+            signer_ref,
+            PostTracker {
+                user_addr: user_addr,
+                total_posts_created: 0
+            }
+        );
         // store based on type
         if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
             // TODO: event returning the user and its type
             move_to(
-            signer_ref,
-            User {
-                addr: signer_addr,
-                pfp: pfp,
-                type: Personal {},
-                username: username
-            }
-        );
+                signer_ref,
+                User {
+                    addr: signer_addr,
+                    pfp: pfp,
+                    type: Personal {},
+                    username: username
+                }
+            )
         } else if (type_info::type_of<T>() == type_info::type_of<Creator>()) {
             // TODO: event returning the user and its type
             move_to(
@@ -191,6 +209,7 @@ module townesquare::user {
         } else { assert!(false, 1); }
     }
 
+
     // -------
     // Asserts
     // -------
@@ -288,6 +307,15 @@ module townesquare::user {
         } else { false }
     }
 
+    #[view]
+    // Returns the total number of posts created by a user; TODO: callable by anyone?
+    public fun get_created_posts_total_number(
+        user_addr: address
+    ): u64 acquires PostTracker {
+        assert!(exists<PostTracker>(user_addr), 1);
+        borrow_global<PostTracker>(user_addr).total_posts_created
+    }
+
     // --------
     // mutators
     // --------
@@ -320,4 +348,12 @@ module townesquare::user {
         
     }
 
+    // update post tracker; this will increment the total_posts_created and return it
+    public(friend) fun update_post_tracker(
+        signer_ref: &signer
+    ): u64 acquires PostTracker {
+        let post_tracker = authorized_borrow_mut<PostTracker>(signer_ref);
+        post_tracker.total_posts_created = post_tracker.total_posts_created + 1;
+        post_tracker.total_posts_created
+    }
 }

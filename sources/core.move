@@ -5,6 +5,7 @@
         - description
         - add friends mechanism
         - add blacklist mechanism from transaction contract
+        - implements an emergency mechanism
 
 */
 
