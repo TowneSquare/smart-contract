@@ -19,6 +19,8 @@
 
     TODO:
         - add unit tests
+        - add big table for posts; would be useful in case off chain data is lost
+        or in maintenance, in that case, we can get table of posts, it can be costy tho.
         - authorized borrow to moderators and list of connected users
 */
 
@@ -295,7 +297,7 @@ module townesquare::user {
 
     #[view]
     // User is of type T
-    public fun is_of_type<T: drop + store + key>(
+    public fun is_user_of_type<T: drop + store + key>(
         signer_ref: &signer
     ): bool {
         if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
@@ -348,12 +350,21 @@ module townesquare::user {
         
     }
 
-    // update post tracker; this will increment the total_posts_created and return it
-    public(friend) fun update_post_tracker(
+    // increment post tracker; this will increment the total_posts_created and return it
+    public(friend) fun increment_post_tracker(
         signer_ref: &signer
     ): u64 acquires PostTracker {
         let post_tracker = authorized_borrow_mut<PostTracker>(signer_ref);
         post_tracker.total_posts_created = post_tracker.total_posts_created + 1;
+        post_tracker.total_posts_created
+    }
+
+    // decrement post tracker; this will decrement the total_posts_created and return it
+    public(friend) fun decrement_post_tracker(
+        signer_ref: &signer
+    ): u64 acquires PostTracker {
+        let post_tracker = authorized_borrow_mut<PostTracker>(signer_ref);  // TODO: can be moderator?
+        post_tracker.total_posts_created = post_tracker.total_posts_created - 1;
         post_tracker.total_posts_created
     }
 }
