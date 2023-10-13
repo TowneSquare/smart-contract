@@ -1,5 +1,5 @@
 /*
-    master module
+    core module
 
     TODO:
         - description
@@ -8,6 +8,7 @@
         - implement an emergency mechanism
         - make borrow functions names clearer
         - organise functions per type
+        - remove referral function
 
 */
 
@@ -138,6 +139,8 @@ module townesquare::core {
         // add the new code to the vector
         smart_vector::push_back<String>(referral_codes_vector, referral_code);
     }
+
+    // TODO: remove referral
 
     // TODO: get referral list; can be gas heavy
 
