@@ -14,8 +14,8 @@ module townesquare::referral {
     use std::option::{Self, Option};
     use std::signer;
     use std::string::{String};
+    use townesquare::core;
     
-    friend townesquare::user;
     // -------
     // Structs
     // -------
@@ -29,6 +29,7 @@ module townesquare::referral {
     // Public functions
     // ----------------
     public fun init(signer_ref: &signer, code: String, referrer: Option<address>) {
+        core::add_referral_code(signer::address_of(signer_ref), code);
         move_to(
             signer_ref,
             Referral {
@@ -40,7 +41,7 @@ module townesquare::referral {
     }
 
     // Activate a referral
-    public(friend) fun activate(signer_ref: &signer, referral: &Referral) acquires Referral {
+    fun activate(signer_ref: &signer, referral: &Referral) acquires Referral {
         let referral_resource = authorized_borrow_mut(signer_ref);
         // change referral status to active
         referral_resource.is_active = true;
