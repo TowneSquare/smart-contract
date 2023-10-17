@@ -55,19 +55,21 @@ module townesquare::referral {
     public fun change_activity_status<X, Y>(signer_ref: &signer) acquires Referral {
         assert!(type_info::type_of<X>() != type_info::type_of<Y>(), 1);
         let referral = borrow_global<Referral>(signer::address_of(signer_ref));
-        // if Y is Active
+        // from Inactive to Active
         if (
             type_info::type_of<X>() == type_info::type_of<Inactive>() 
             && type_info::type_of<Y>() == type_info::type_of<Active>()
         ) {  
             move referral;
             move_to(signer_ref, Active {});
-        } else if (type_info::type_of<Y>() == type_info::type_of<Inactive>()){
+        // from Active to Inactive
+        } else if (
+            type_info::type_of<X>() == type_info::type_of<Active>() 
+            && type_info::type_of<Y>() == type_info::type_of<Inactive>()
+        ) {
             move referral;
             move_to(signer_ref, Inactive {});
-        }
-
-        // if Y is Inactive
+        } else { assert!(false, 2); }
     }
 
     // ---------
@@ -104,12 +106,12 @@ module townesquare::referral {
 
     // Checks if user is an active
     public fun is_active(user_addr: address): bool {
-        if (exists<Active>(user_addr)) { true } else { false }
+        exists<Active>(user_addr)
     }
 
     // Checks if user is inactive
-    public fun is_active(user_addr: address): bool {
-        if (exists<Inactive>(user_addr)) { true } else { false }
+    public fun is_inactive(user_addr: address): bool {
+        exists<Inactive>(user_addr)
     }
 }
 

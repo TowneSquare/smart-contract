@@ -18,6 +18,7 @@
         - tbd
 
     TODO:
+        - add caps so that user can't self-promote to moderator
         - add unit tests
         - add big table for posts; would be useful in case off chain data is lost
         or in maintenance, in that case, we can get table of posts, it can be costy tho.
@@ -28,7 +29,7 @@ module townesquare::user {
     use aptos_std::type_info;
     use std::option::{Self, Option};
     use std::signer;
-    use std::string::{String};
+    use std::string::{Self, String};
     
     friend townesquare::core;
     friend townesquare::post;
@@ -50,7 +51,7 @@ module townesquare::user {
     struct Creator has drop, store, key {}
     struct Moderator has drop, store, key {}
 
-    // Post tracker; used to get creation_num for GUID
+    // Post tracker; 
     struct PostTracker has key { 
         user_addr: address,
         total_posts_created: u64,
@@ -121,7 +122,7 @@ module townesquare::user {
     }
 
     // Add type to user
-    public(friend) fun add_type<T>(
+    public(friend) fun add_user_type<T>(
         signer_ref: &signer
     ) {
         let signer_addr = signer::address_of(signer_ref);
@@ -131,24 +132,21 @@ module townesquare::user {
         if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
             // assert user doesn't exist under this type
             assert!(!exists<Personal>(signer_addr), 1);
-            move_to(
-                signer_ref,
-                Personal {}
-            )
+            move_to(signer_ref, Personal {});
         } else if (type_info::type_of<T>() == type_info::type_of<Creator>()) {
             // assert user doesn't exist under this type
             assert!(!exists<Creator>(signer_addr), 1);
-            move_to(
-                signer_ref,
-                Creator {}
-            )
+            move_to(signer_ref, Creator {});
         } else if (type_info::type_of<T>() == type_info::type_of<Moderator>()) {
+            // assert signer is moderator or ts
+            assert!(
+                exists<Moderator>(signer_addr) ||
+                signer_addr == @townesquare,
+                1
+            );
             // assert user doesn't exist under this type
             assert!(!exists<Moderator>(signer_addr), 1);
-            move_to(
-                signer_ref,
-                Moderator {}
-            )
+            move_to(signer_ref, Moderator {});
         } else { assert!(false, 1); }
     }
 
@@ -157,24 +155,32 @@ module townesquare::user {
         signer_ref: &signer
     ) acquires User, Creator, Moderator, Personal {
         let signer_addr = signer::address_of(signer_ref);
-        // assert user exists
-        assert_user_exists(signer_addr);
-        User { addr: _, pfp: _, username: _, type: _ } = move_from<User<Personal>>(signer_addr);
-        User { addr: _, pfp: _, username: _, type: _ } = move_from<User<Creator>>(signer_addr);
-        User { addr: _, pfp: _, username: _, type: _ } = move_from<User<Moderator>>(signer_addr);
-        Personal {} = move_from<Personal>(signer_addr);
-        Creator {} = move_from<Creator>(signer_addr);
-        Moderator {} = move_from<Moderator>(signer_addr);
+        // if user is of type Personal
+        if (is_user_of_type<Personal>(signer_addr) == true) {
+            User { addr: _, pfp: _, username: _, type: _ } = move_from<User<Personal>>(signer_addr);
+            Personal {} = move_from<Personal>(signer_addr);
+        }
+        // if user is of type Creator
+        else if (is_user_of_type<Creator>(signer_addr) == true) {
+            User { addr: _, pfp: _, username: _, type: _ } = move_from<User<Creator>>(signer_addr);
+            Creator {} = move_from<Creator>(signer_addr);
+        }
+        // if user is of type Moderator
+        else if (is_user_of_type<Moderator>(signer_addr) == true) {
+            User { addr: _, pfp: _, username: _, type: _ } = move_from<User<Moderator>>(signer_addr);
+            Moderator {} = move_from<Moderator>(signer_addr);
+        }
+        // TODO: delete posts and post tracker
     }
 
     // Delete a user type
-    public(friend) fun delete_type<T>(
+    public(friend) fun delete_user_type<T>(
         signer_ref: &signer
     ) acquires Creator, Moderator, Personal {
         let signer_addr = signer::address_of(signer_ref);
         // assert user exists
         assert_user_exists(signer_addr);
-        // store based on type
+        // based on type
         if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
             // assert user does exist under this type
             assert!(exists<Personal>(signer_addr), 1);
@@ -211,7 +217,6 @@ module townesquare::user {
         } else { assert!(false, 1); }
     }
 
-
     // -------
     // Asserts
     // -------
@@ -240,6 +245,30 @@ module townesquare::user {
     // Accessors
     // ---------
 
+    // returns User of type Personal
+    public(friend) fun get_username<T>(
+        signer_ref: &signer,
+        user_addr: address
+    ): String acquires User {
+        let signer_addr = signer::address_of(signer_ref);
+        assert_user_exists(signer_addr);
+        // if type in personal
+        if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
+            is_user_of_type<Personal>(user_addr);
+            borrow_global<User<Personal>>(user_addr).username
+        }
+        // if type in creator
+        else if (type_info::type_of<T>() == type_info::type_of<Creator>()) {
+            is_user_of_type<Creator>(user_addr);
+            borrow_global<User<Creator>>(user_addr).username
+        }
+        // if type in moderator
+        else if (type_info::type_of<T>() == type_info::type_of<Moderator>()) {
+            is_user_of_type<Moderator>(user_addr);
+            borrow_global<User<Moderator>>(user_addr).username
+        } else { string::utf8(b"") }
+    }
+
     // for getters
     inline fun authorized_borrow<T: key>(signer_ref: &signer): &T {
         let signer_addr = signer::address_of(signer_ref);
@@ -255,37 +284,36 @@ module townesquare::user {
         borrow_global_mut<T>(signer_addr)
     }
 
-
     // --------------
     // View Functions
     // --------------
 
-    #[view]
-    // Get user address
-    public fun get_user_address<T: drop + store + key>(
-        signer_ref: &signer
-    ): address acquires User {
-        let user = authorized_borrow<User<T>>(signer_ref);
-        user.addr
-    }
+    // #[view]
+    // // Get user address
+    // public fun get_user_address<T: drop + store + key>(
+    //     signer_ref: &signer
+    // ): address acquires User {
+    //     // let user = authorized_borrow<User<T>>(signer_ref);
+    //     // user.addr
+    // }
 
-    #[view]
-    // Get user pfp
-    public fun get_user_pfp<T: drop + store + key>(
-        signer_ref: &signer
-    ): address acquires User {
-        let user = authorized_borrow<User<T>>(signer_ref);
-        user.pfp
-    }
+    // #[view]
+    // // Get user pfp
+    // public fun get_user_pfp<T: drop + store + key>(
+    //     signer_ref: &signer
+    // ): address acquires User {
+    //     // let user = authorized_borrow<User<T>>(signer_ref);
+    //     // user.pfp
+    // }
 
-    #[view]
-    // Get user username
-    public fun get_user_username<T: drop + store + key>(
-        signer_ref: &signer
-    ): String acquires User {
-        let user = authorized_borrow<User<T>>(signer_ref);
-        user.username
-    }
+    // #[view]
+    // // Get user username
+    // public fun get_username<T: drop + store + key>(
+    //     signer_ref: &signer
+    // ): String acquires User {
+    //     // let user = authorized_borrow<User<T>>(signer_ref);
+    //     // user.username
+    // }
 
     #[view]
     // verify an address is a user
@@ -296,18 +324,23 @@ module townesquare::user {
     }
 
     #[view]
-    // User is of type T
-    public fun is_user_of_type<T: drop + store + key>(
-        signer_ref: &signer
+    // User exists and of type T
+    public fun is_user_of_type<T>(
+        maybe_user_addr: address
     ): bool {
+        assert_user_exists(maybe_user_addr);
         if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
-            exists<Personal>(signer::address_of(signer_ref))
+            exists<Personal>(maybe_user_addr)
         } else if (type_info::type_of<T>() == type_info::type_of<Creator>()) {
-            exists<Creator>(signer::address_of(signer_ref))
+            exists<Creator>(maybe_user_addr)
         } else if (type_info::type_of<T>() == type_info::type_of<Moderator>()) {
-            exists<Moderator>(signer::address_of(signer_ref))
+            exists<Moderator>(maybe_user_addr)
         } else { false }
     }
+
+    // #[view]
+    // return all user's types
+    // TODO
 
     #[view]
     // Returns the total number of posts created by a user; TODO: callable by anyone?
@@ -340,14 +373,28 @@ module townesquare::user {
         user.pfp = new_pfp;
     }
 
-    // TODO: Change user type from X to Y
-    public(friend) fun set_user_type<X, Y>(
+    // Change user type from X to Y
+    public(friend) fun change_user_type<X, Y>(
         signer_ref: &signer
     ) {
         let signer_addr = signer::address_of(signer_ref);
-        // assert types are not the same
+        // user exists
+        assert_user_exists(signer_addr);
+        // X and Y should be different types
         assert!(type_info::type_of<X>() != type_info::type_of<Y>(), 1);
-        
+        // if Y is Personal
+        if (type_info::type_of<Y>() == type_info::type_of<Personal>()) {
+            // assert user is not personal
+            assert!(!exists<Personal>(signer_addr), 1); // already Personal user
+            // remove X type from user
+            
+            // add Y type to user
+            add_user_type<Y>(signer_ref);
+
+        // if Y is Creator
+        } else if (type_info::type_of<Y>() == type_info::type_of<Creator>()) {
+            // TODO
+        }
     }
 
     // increment post tracker; this will increment the total_posts_created and return it
@@ -366,5 +413,15 @@ module townesquare::user {
         let post_tracker = authorized_borrow_mut<PostTracker>(signer_ref);  // TODO: can be moderator?
         post_tracker.total_posts_created = post_tracker.total_posts_created - 1;
         post_tracker.total_posts_created
+    }
+
+    // delete post tracker
+    fun delete_post_tracker(
+        signer_ref: &signer
+    ) acquires PostTracker {
+        let signer_addr = signer::address_of(signer_ref);
+        assert!(exists<PostTracker>(signer_addr), 1);
+        let post_tracker = move_from<PostTracker>(signer_addr);
+        let PostTracker { user_addr: _, total_posts_created: _ } = post_tracker;
     }
 }
