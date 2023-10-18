@@ -288,14 +288,87 @@ module townesquare::user {
     // View Functions
     // --------------
 
-    // #[view]
-    // // Get user address
-    // public fun get_user_address<T: drop + store + key>(
-    //     signer_ref: &signer
-    // ): address acquires User {
-    //     // let user = authorized_borrow<User<T>>(signer_ref);
-    //     // user.addr
-    // }
+    // User
+    #[view]
+    // Get user of type personal from address
+    public fun get_personal_from_address(
+        maybe_user_addr: address
+    ): User<Personal> acquires User {
+        assert!(exists<User<Personal>>(maybe_user_addr), 1);    // user does not exist under this type
+        let user_resource = borrow_global<User<Personal>>(maybe_user_addr);
+        User<Personal> {
+            addr: user_resource.addr,
+            pfp: user_resource.pfp,
+            type: Personal {},
+            username: user_resource.username
+        } 
+    }
+
+    #[view]
+    // Get user of type creator from address
+    public fun get_creator_from_address(
+        maybe_user_addr: address
+    ): User<Creator> acquires User {
+        assert!(exists<User<Creator>>(maybe_user_addr), 1);    // user does not exist under this type
+        let user_resource = borrow_global<User<Creator>>(maybe_user_addr);
+        User<Creator> {
+            addr: user_resource.addr,
+            pfp: user_resource.pfp,
+            type: Creator {},
+            username: user_resource.username
+        } 
+    }
+
+    #[view]
+    // Get user of type moderator from address
+    public fun get_moderator_from_address(
+        maybe_user_addr: address
+    ): User<Moderator> acquires User {
+        assert!(exists<User<Moderator>>(maybe_user_addr), 1);    // user does not exist under this type
+        let user_resource = borrow_global<User<Moderator>>(maybe_user_addr);
+        User<Moderator> {
+            addr: user_resource.addr,
+            pfp: user_resource.pfp,
+            type: Moderator {},
+            username: user_resource.username
+        } 
+    }
+
+    #[view]
+    // Get personal username from address
+    public fun get_personal_username(
+        maybe_user: address
+    ): String acquires User {
+        assert!(exists<User<Personal>>(maybe_user), 1);    // user does not exist under this type
+        borrow_global<User<Personal>>(maybe_user).username
+    }
+
+    #[view]
+    // Get creator username from address
+    public fun get_creator_username(
+        maybe_user: address
+    ): String acquires User {
+        assert!(exists<User<Creator>>(maybe_user), 1);    // user does not exist under this type
+        borrow_global<User<Creator>>(maybe_user).username
+    }
+
+    #[view]
+    // Get moderator username from address
+    public fun get_moderator_username(
+        maybe_user: address
+    ): String acquires User {
+        assert!(exists<User<Moderator>>(maybe_user), 1);    // user does not exist under this type
+        borrow_global<User<Moderator>>(maybe_user).username
+    }
+
+    #[view]
+    // Get personal pfp from address
+    public fun get_user_pfp(
+        maybe_user: address
+    ): address acquires User {
+        assert!(exists<User<Personal>>(maybe_user), 1);    // user does not exist under this type
+        borrow_global<User<Personal>>(maybe_user).pfp
+    }
 
     // #[view]
     // // Get user pfp
@@ -376,25 +449,34 @@ module townesquare::user {
     // Change user type from X to Y
     public(friend) fun change_user_type<X, Y>(
         signer_ref: &signer
-    ) {
+    ) acquires Creator, Moderator, Personal {
         let signer_addr = signer::address_of(signer_ref);
         // user exists
         assert_user_exists(signer_addr);
         // X and Y should be different types
         assert!(type_info::type_of<X>() != type_info::type_of<Y>(), 1);
-        // if Y is Personal
-        if (type_info::type_of<Y>() == type_info::type_of<Personal>()) {
-            // assert user is not personal
-            assert!(!exists<Personal>(signer_addr), 1); // already Personal user
-            // remove X type from user
-            
+        // if X is personal
+        if (type_info::type_of<X>() == type_info::type_of<Personal>()) {
+            // assert user is personal
+            assert!(exists<Personal>(signer_addr), 1); // already Personal user
+            assert!(!exists<Creator>(signer_addr), 1); // not Creator user
             // add Y type to user
-            add_user_type<Y>(signer_ref);
+            add_user_type<Personal>(signer_ref);
+            // remove X type from user
+            delete_user_type<X>(signer_ref);
 
-        // if Y is Creator
-        } else if (type_info::type_of<Y>() == type_info::type_of<Creator>()) {
-            // TODO
+        // if X is Creator
+        } else if (type_info::type_of<X>() == type_info::type_of<Creator>()) {
+            assert!(exists<Creator>(signer_addr), 1); // already Creator user
+            assert!(!exists<Personal>(signer_addr), 1); // not Personal user
+            // add Y type to user
+            add_user_type<Personal>(signer_ref);
+            // remove X type from user
+            delete_user_type<X>(signer_ref);
         }
+        // if X is creator
+        // TODO
+        
     }
 
     // increment post tracker; this will increment the total_posts_created and return it
