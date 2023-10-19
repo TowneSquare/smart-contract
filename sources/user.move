@@ -23,6 +23,8 @@
         - add big table for posts; would be useful in case off chain data is lost
         or in maintenance, in that case, we can get table of posts, it can be costy tho.
         - authorized borrow to moderators and list of connected users
+        - organise functions
+        - not all of the current funcs that are tagged with #[view] are actually views, fix it
 */
 
 module townesquare::user {
@@ -288,6 +290,21 @@ module townesquare::user {
     // View Functions
     // --------------
 
+    // TODO
+    // #[view]
+    // // Get signer's User based on type; callable by anyone using ts
+
+    // TODO
+    // #[view]
+    // // Get all user types; callable by anyone using ts
+    // public entry fun get_all_user_types(signer_ref: &signer): vector {
+    //     let signer_addr = signer::address_of(signer_ref);
+    //     assert_user_exists(signer_addr);
+    //     let user_types = vector::empty<User>();
+        
+    //     user_types
+    // }
+
     // User
     #[view]
     // Get user of type personal from address
@@ -363,33 +380,18 @@ module townesquare::user {
 
     #[view]
     // Get personal pfp from address
-    public fun get_user_pfp(
+    public fun get_personal_pfp(
         maybe_user: address
     ): address acquires User {
         assert!(exists<User<Personal>>(maybe_user), 1);    // user does not exist under this type
         borrow_global<User<Personal>>(maybe_user).pfp
     }
 
-    // #[view]
-    // // Get user pfp
-    // public fun get_user_pfp<T: drop + store + key>(
-    //     signer_ref: &signer
-    // ): address acquires User {
-    //     // let user = authorized_borrow<User<T>>(signer_ref);
-    //     // user.pfp
-    // }
-
-    // #[view]
-    // // Get user username
-    // public fun get_username<T: drop + store + key>(
-    //     signer_ref: &signer
-    // ): String acquires User {
-    //     // let user = authorized_borrow<User<T>>(signer_ref);
-    //     // user.username
-    // }
+    // TODO: get creator pfp from address
+    // TODO: get moderator pfp from address
 
     #[view]
-    // verify an address is a user
+    // verify an address is a user giving type and address; callable by anyone
     public fun is_user<T: drop + store + key>(
         addr: address
     ): bool {
