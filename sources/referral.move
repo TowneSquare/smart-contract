@@ -5,6 +5,8 @@
     with the field address_is_active set to false. To set it to true, the address have to make
     a social transaction.  
 
+    Referral tiers are set/calculated off-chain:
+
     | Referral Tier | Referral Points | Referral Range |
     |---------------|-----------------|----------------|
     | Tier 1        | 100             | 0-24           |
@@ -12,11 +14,12 @@
     | Tier 3        | 115 (15% bonus) | 50-74          |
     | Tier 4        | 120 (20% bonus) | 75-119         |
     | Tier 5        | 125 (25% bonus) | 120-199        |
-    | Tier 6        | 135 (35% bonus) | 200+           |
+    | Tier 6        | 135 (35% bonus) | 200-201+       |
 
     TODO: 
         - implement the referrer logic 
         - get referrer address must be conditional since not all users have referrers
+        - set funcs visibity
 */
 module townesquare::referral {
     use aptos_std::smart_vector::{Self, SmartVector};
@@ -24,108 +27,105 @@ module townesquare::referral {
     use std::option::{Self, Option};
     use std::signer;
     use std::string::{String};
-    use townesquare::core;
     
+    friend townesquare::core;
+
     // -------
     // Structs
     // -------
+
+    // Referral resource
     struct Referral has key {
         code: String,  // typed by user or in the off-chain level
-        referrer: Option<address>,
-        tier_level: u64    // = Tier.level  
+        referrer: Option<address>
     }
 
-    // Activity status
-    struct Active has key {}
-    struct Inactive has key {}
-
-    // Referral tiers; There are 6 tiers for now
-    struct Tier has key {
-        level: u64, // n
-        points: u64,
-        // minimum number of referrals to reach this tier.
-        // max_referrals<Tier n+1> = min_referrals<Tier n> - 1
-        min_referrals: u64, 
-        // maximum number of referrals of this tier.
-        // min_referrals<Tier n+1> = max_referrals<Tier n> + 1
-        max_referrals: u64,  
-        // current number of referrals; incremented when a new user signs up with the referral code AND becomes active.
-        current_active_referrals: u64, 
-        // current number of referrals; incremented when a new user signs up with the referral code BUT not yet active.
-        current_inactive_referrals: u64,   
-    }
+    // // Referral tiers; There are 6 tiers for now
+    // struct Tier has key {
+    //     level: u64, // n
+    //     bonus_rate: u64,
+    //     // minimum number of referrals to reach this tier.
+    //     // max_referrals<tier.level n+1> = min_referrals<tier.level n> - 1
+    //     min_referrals: u64, 
+    //     // maximum number of referrals of this tier.
+    //     // min_referrals<tier.level n+1> = max_referrals<tier.level n> + 1
+    //     max_referrals: u64 
+    // }
 
     // -------
     // Asserts
     // -------
 
-    // TODO: assert referral.tier_level = tier.level and between 1 and 6
+    // TODO: users cannot be active and inactive at the same time => Toggle model
+    // TODO: assert referral.tier_level = tier.level And is in R : [1, 6]
+    // TODO: (copilot suggestion) assert referral.code exists in global list of referral codes
+    // TODO: assert tier.min_referrals is in R : {0, 25, 50, 75, 120, 200}
+    // TODO: assert tier.max_referrals is in R : {24, 49, 74, 119, 199, 201}
 
     // ----------------
     // Public functions
     // ----------------
-    public fun init<Activity>(signer_ref: &signer, code: String, referrer: Option<address>) {
+
+    // initialize function; used in (user/core?), initialize the referral resource when 
+    // a user signs up for the platform. All users start as inactive, and with a referral code.
+    public(friend) fun create_referral(signer_ref: &signer, code: String, referrer: Option<address>) {
         // add the referral code to the global list; useful to check the code's validity.
-        core::add_referral_code(signer::address_of(signer_ref), code);
-        // move the referral resource to the signer
-        move_to(
-            signer_ref,
-            Referral {
-                code: code,
-                referrer: option::none(),   // TODO: must be conditionally set
-                tier_level: 1
-            }
-        );
-        // move tier resource to the signer
-        // level 1 inline fun
-
-        // Based on activity type, set the activity status
-        if (type_info::type_of<Activity>() == type_info::type_of<Active>()) {
-            move_to(signer_ref, Active {})
-        } else if (type_info::type_of<Activity>() == type_info::type_of<Inactive>()) {
-            move_to(signer_ref, Inactive {})
-        }
+        // referrer typed
+        if (!option::is_none<address>(&mut referrer)) {
+            // assert referrer is a user
+            // TODO user::assert_user_exists(option::extract<address>(referrer));
+            // move referral resource to the signer
+            move_to(
+                signer_ref,
+                Referral {
+                    code: code,
+                    referrer: referrer,
+                }
+            );
+        } else {
+            // move the referral resource to the signer
+            move_to(
+                signer_ref,
+                Referral {
+                    code: code,
+                    referrer: option::none()
+                }
+            );
+            // move tier resource to the signer
+        };
+    }
+    
+    // Remove referral
+    public(friend) fun remove_referral(signer_ref: &signer) acquires Referral {
+        let user_addr = signer::address_of(signer_ref);
+        // assert referral exists under signer address
+        assert!(exists<Referral>(user_addr), 1);
+        // remove the referral resource
+        Referral {code: _, referrer: _} = move_from<Referral>(user_addr);
     }
 
-    // Chance user's activity status for X to Y
-    inline fun change_activity_status<Tier, X, Y>(signer_ref: &signer) acquires Referral {
-        assert!(type_info::type_of<X>() != type_info::type_of<Y>(), 1);
-        let referral = borrow_global<Referral>(signer::address_of(signer_ref));
-        // from Inactive to Active
-        if (
-            type_info::type_of<X>() == type_info::type_of<Inactive>() 
-            && type_info::type_of<Y>() == type_info::type_of<Active>()
-        ) {  
-            // TODO: assert atleast one transaction has been made from the signer's address
-            move referral;
-            move_to(signer_ref, Active {});
-        // from Active to Inactive
-        } else if (
-            type_info::type_of<X>() == type_info::type_of<Active>() 
-            && type_info::type_of<Y>() == type_info::type_of<Inactive>()
-        ) {
-            move referral;
-            move_to(signer_ref, Inactive {});
-        } else { assert!(false, 2); }
-    }
+    // TODO: a function to to change referral from inactive and active using change_activity_status.
+    // TODO: this function will be called only when a user makes a social transaction.
 
-    // TODO: Tiers; UPDATE ALSO REFERRAL RESOURCE
-
-    // Tier 1
-
-    // Tier 2
-
-    // Tier 3
-
-    // Tier 4
-
-    // Tier 5
-
-    // Tier 6
+    
 
     // level up
+    // if tier_n.current_active_referrals = tier_n+1.min_referrals THEN level up
+    /* 
+        Tier n+1: 
+            tier_n+1.min_referrals = tier_n.max_referrals + 1
+            tier_n+1.max_referrals = tier_n+2.min_referrals - 1
+                > IF tier_n+2 does not exist, tier_n+1.max_referrals = u64::max_value 
+    */
 
     // level down
+    // if tier_n.current_active_referrals = tier_n-1.max_referrals THEN level down
+    /*
+        Tier n-1:
+            tier_n-1.min_referrals = tier_n-2.max_referrals + 1
+                > IF tier_n-2 does not exist, tier_n-1.min_referrals = 0
+            tier_n-1.max_referrals = tier_n.min_referrals - 1
+    */
 
     // ---------
     // Accessors
@@ -134,15 +134,17 @@ module townesquare::referral {
     // Referral
 
     // get referral resource
-    inline fun authorized_borrow(signer_ref: &signer): &Referral {
+    inline fun authorized_borrow(signer_ref: &signer, user_addr: address): &Referral {
         let signer_addr = signer::address_of(signer_ref);
-        assert!(exists<Referral>(signer_addr), 1);
-        borrow_global<Referral>(signer_addr)
+        // assert signer and user exist
+        assert!(exists<Referral>(user_addr), 1);
+        borrow_global<Referral>(user_addr)
     }
     
     // get mut referral resource
-    inline fun authorized_borrow_mut(signer_ref: &signer): &mut Referral acquires Referral {
+    inline fun authorized_borrow_mut(signer_ref: &signer, user_addr: address): &mut Referral acquires Referral {
         let signer_addr = signer::address_of(signer_ref);
+        // assert signer and user exist
         assert!(exists<Referral>(signer_addr), 1);
         borrow_global_mut<Referral>(signer_addr)
     }
@@ -157,32 +159,6 @@ module townesquare::referral {
         *option::borrow<address>(&referral.referrer)
     }
 
-    // Activity Status
-
-    // Checks if user is an active
-    public fun address_is_active(user_addr: address): bool {
-        exists<Active>(user_addr)
-    }
-
-    // Checks if user is inactive
-    public fun address_is_inactive(user_addr: address): bool {
-        exists<Inactive>(user_addr)
-    }
-
-    // Tiers
-
-    // TODO: is level one
-
-    // TODO: is level two
-
-    // TODO: is level three
-
-    // TODO: is level four
-
-    // TODO: is level five
-
-    // TODO: is level six
-
     // --------------
     // View functions
     // --------------
@@ -190,40 +166,16 @@ module townesquare::referral {
     // referral
 
     #[view]
-    public fun get_referral_code(signer_ref: &signer): String acquires Referral {
-        let referral = authorized_borrow(signer_ref);
+    public fun get_referral_code(signer_ref: &signer, user_addr: address): String acquires Referral {
+        let referral = authorized_borrow(signer_ref, user_addr);
         referral.code
     }
 
     #[view]
-    public fun get_referrer_address(signer_ref: &signer): address acquires Referral {
-        let referral = authorized_borrow(signer_ref);
+    public fun get_referrer_address(signer_ref: &signer, user_addr: address): address acquires Referral {
+        let referral = authorized_borrow(signer_ref, user_addr);
         *option::borrow<address>(&referral.referrer)
     }
-
-    // activity
-
-    #[view]
-    public fun signer_is_active(signer_ref: &signer): bool {
-        address_is_active(signer::address_of(signer_ref))
-    }
-
-    #[view]
-    public fun signer_is_inactive(signer_ref: &signer): bool {
-        address_is_inactive(signer::address_of(signer_ref))
-    }
-
-    // tier
-    
-    // TODO: tier resource
-    // TODO: tier level
-    // TODO: tier points
-    // TODO: tier min_referrals
-    // TODO: tier max_referrals
-    // TODO: tier current_active_referrals
-    // TODO: tier current_inactive_referrals
-    // TODO: how many points to level up; max_referrals - current_active_referrals + 1
-    // TODO: how many points to level down; current_active_referrals - min_referrals + 1
 
 }
 

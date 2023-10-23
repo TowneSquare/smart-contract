@@ -57,7 +57,7 @@ module townesquare::post {
     // Init function
     // -------------
     
-    public(friend) fun initialize_module(signer_ref: &signer) {
+    public(friend) fun init(signer_ref: &signer) {
         // Initialize public posts table
         let public_posts = Public { table: smart_table::new<address, Post>() };
         move_to(signer_ref, public_posts);
@@ -76,11 +76,10 @@ module townesquare::post {
         signer_ref: &signer,
         content: String,
         description: String,
+        id_creation_num: u64,
         timestamp: u64
     ) acquires Public, Private {
         let user_addr = signer::address_of(signer_ref);
-        user::assert_user_exists(user_addr);
-        let id_creation_num = user::increment_post_tracker(signer_ref);
         let post_address = create_post_address(user_addr, id_creation_num);
         // if public
         if (type_info::type_of<Visibility>() == type_info::type_of<Public>()) {
@@ -120,8 +119,6 @@ module townesquare::post {
         post_address: address
     ) acquires Private, Public {
         let user_addr = signer::address_of(signer_ref);
-        // user_addr == signer_addr is USER
-        user::assert_user_exists(user_addr);
         // if public
         if (type_info::type_of<Visibility>() == type_info::type_of<Public>()) {
             // borrow public posts
@@ -151,7 +148,7 @@ module townesquare::post {
         };
     }
 
-    // Force delete post; callable by moderator
+    // Force delete post; callable only by moderators
     public(friend) fun force_delete_post_internal(
         signer_ref: &signer,
         user_addr: address,

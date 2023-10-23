@@ -35,6 +35,8 @@ module townesquare::user {
     
     friend townesquare::core;
     friend townesquare::post;
+    // TODO
+    // friend tstc::social_transaction;
 
     // -------
     // Structs
@@ -61,9 +63,13 @@ module townesquare::user {
         // TODO: post_deleted_events: ,
     }
 
-    // ---------
-    // Internals
-    // ---------
+    // Activity status
+    struct Active has key {}
+    struct Inactive has key {}
+
+    // ----------------
+    // Public functions
+    // ----------------
 
     // Create a new user
     // TODO: should return a user struct and address; address to store it in a global struct
@@ -86,6 +92,8 @@ module townesquare::user {
                 total_posts_created: 0
             }
         );
+        // user is inactive by default
+        move_to(signer_ref, Inactive {});
         // store based on type
         if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
             // TODO: event returning the user and its type
@@ -124,7 +132,7 @@ module townesquare::user {
     }
 
     // Add type to user
-    public(friend) fun add_user_type<T>(
+    public(friend) fun add_user_type_internal<T>(
         signer_ref: &signer
     ) {
         let signer_addr = signer::address_of(signer_ref);
@@ -152,31 +160,8 @@ module townesquare::user {
         } else { assert!(false, 1); }
     }
 
-    // Delete a user alongside all its types
-    public(friend) fun delete_user(
-        signer_ref: &signer
-    ) acquires User, Creator, Moderator, Personal {
-        let signer_addr = signer::address_of(signer_ref);
-        // if user is of type Personal
-        if (is_user_of_type<Personal>(signer_addr) == true) {
-            User { addr: _, pfp: _, username: _, type: _ } = move_from<User<Personal>>(signer_addr);
-            Personal {} = move_from<Personal>(signer_addr);
-        }
-        // if user is of type Creator
-        else if (is_user_of_type<Creator>(signer_addr) == true) {
-            User { addr: _, pfp: _, username: _, type: _ } = move_from<User<Creator>>(signer_addr);
-            Creator {} = move_from<Creator>(signer_addr);
-        }
-        // if user is of type Moderator
-        else if (is_user_of_type<Moderator>(signer_addr) == true) {
-            User { addr: _, pfp: _, username: _, type: _ } = move_from<User<Moderator>>(signer_addr);
-            Moderator {} = move_from<Moderator>(signer_addr);
-        }
-        // TODO: delete posts and post tracker
-    }
-
     // Delete a user type
-    public(friend) fun delete_user_type<T>(
+    public(friend) fun delete_user_type_internal<T>(
         signer_ref: &signer
     ) acquires Creator, Moderator, Personal {
         let signer_addr = signer::address_of(signer_ref);
@@ -217,6 +202,29 @@ module townesquare::user {
             // remove T type from user
             Moderator {} = move_from<Moderator>(signer_addr);
         } else { assert!(false, 1); }
+    }
+
+    // Delete a user alongside all its types
+    public(friend) fun delete_user_internal(
+        signer_ref: &signer
+    ) acquires User, Creator, Moderator, Personal {
+        let signer_addr = signer::address_of(signer_ref);
+        // if user is of type Personal
+        if (is_user_of_type<Personal>(signer_addr) == true) {
+            User { addr: _, pfp: _, username: _, type: _ } = move_from<User<Personal>>(signer_addr);
+            Personal {} = move_from<Personal>(signer_addr);
+        }
+        // if user is of type Creator
+        else if (is_user_of_type<Creator>(signer_addr) == true) {
+            User { addr: _, pfp: _, username: _, type: _ } = move_from<User<Creator>>(signer_addr);
+            Creator {} = move_from<Creator>(signer_addr);
+        }
+        // if user is of type Moderator
+        else if (is_user_of_type<Moderator>(signer_addr) == true) {
+            User { addr: _, pfp: _, username: _, type: _ } = move_from<User<Moderator>>(signer_addr);
+            Moderator {} = move_from<Moderator>(signer_addr);
+        }
+        // TODO: delete posts and post tracker
     }
 
     // -------
@@ -284,6 +292,22 @@ module townesquare::user {
         let signer_addr = signer::address_of(signer_ref);
         assert!(exists<T>(signer_addr), 1);
         borrow_global_mut<T>(signer_addr)
+    }
+
+    // Change user's activity status for X to Y
+    inline fun change_activity_status<X, Y>(signer_ref: &signer) {
+        assert_user_exists(signer::address_of(signer_ref));
+        assert!(type_info::type_of<X>() != type_info::type_of<Y>(), 1);
+        // from Inactive to Active
+        if ( type_info::type_of<X>() == type_info::type_of<Inactive>() ) {  
+            // TODO: assert atleast one transaction has been made from the signer's address
+            move_to(signer_ref, Active {});
+        // from Active to Inactive
+        } else if (
+            type_info::type_of<X>() == type_info::type_of<Active>()
+        ) {
+            move_to(signer_ref, Inactive {});
+        } else { assert!(false, 2); }
     }
 
     // --------------
@@ -426,12 +450,38 @@ module townesquare::user {
         borrow_global<PostTracker>(user_addr).total_posts_created
     }
 
+    // Self activity
+
+    #[view]
+    public fun signer_is_active(signer_ref: &signer): bool {
+        address_is_active(signer::address_of(signer_ref))
+    }
+
+    #[view]
+    public fun signer_is_inactive(signer_ref: &signer): bool {
+        address_is_inactive(signer::address_of(signer_ref))
+    }
+
+    // Another user's activity; callable by anyone
+
+    #[view]
+    // Checks if user is an active
+    public fun address_is_active(user_addr: address): bool {
+        exists<Active>(user_addr)
+    }
+
+    #[view]
+    // Checks if user is inactive
+    public fun address_is_inactive(user_addr: address): bool {
+        exists<Inactive>(user_addr)
+    }
+
     // --------
     // mutators
     // --------
 
     // Change username
-    public(friend) fun set_username<T: drop + store + key>(
+    public(friend) fun set_username_internal<T: drop + store + key>(
         signer_ref: &signer,
         new_username: String
     ) acquires User {
@@ -440,7 +490,7 @@ module townesquare::user {
     }
 
     // Change pfp 
-    public(friend) fun set_pfp<T: drop + store + key>(
+    public(friend) fun set_pfp_internal<T: drop + store + key>(
         signer_ref: &signer,
         new_pfp: address
     ) acquires User {
@@ -463,22 +513,36 @@ module townesquare::user {
             assert!(exists<Personal>(signer_addr), 1); // already Personal user
             assert!(!exists<Creator>(signer_addr), 1); // not Creator user
             // add Y type to user
-            add_user_type<Personal>(signer_ref);
+            add_user_type_internal<Personal>(signer_ref);
             // remove X type from user
-            delete_user_type<X>(signer_ref);
+            delete_user_type_internal<X>(signer_ref);
 
         // if X is Creator
         } else if (type_info::type_of<X>() == type_info::type_of<Creator>()) {
             assert!(exists<Creator>(signer_addr), 1); // already Creator user
             assert!(!exists<Personal>(signer_addr), 1); // not Personal user
             // add Y type to user
-            add_user_type<Personal>(signer_ref);
+            add_user_type_internal<Personal>(signer_ref);
             // remove X type from user
-            delete_user_type<X>(signer_ref);
+            delete_user_type_internal<X>(signer_ref);
         }
         // if X is creator
         // TODO
         
+    }
+
+    // Change user's activity status from Inactive to Active
+    public(friend) fun change_activity_status_from_inactive_to_active(
+        signer_ref: &signer
+    ) {
+        change_activity_status<Inactive, Active>(signer_ref);
+    }
+
+    // Change user's activity status from Active to Inactive
+    public(friend) fun change_activity_status_from_active_to_inactive(
+        signer_ref: &signer
+    ) {
+        change_activity_status<Active, Inactive>(signer_ref);
     }
 
     // increment post tracker; this will increment the total_posts_created and return it
