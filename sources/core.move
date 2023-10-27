@@ -2,13 +2,9 @@
     core module; this will be the entry point for all other modules
 
     TODO:
-        - description
-        - add friends mechanism
         - add blacklist mechanism from transaction contract
         - implement an emergency mechanism
-        - make borrow functions names clearer
         - organise functions per type
-        - remove referral function
 
 */
 
@@ -18,11 +14,10 @@ module townesquare::core {
     use aptos_std::smart_vector::{Self, SmartVector};
     use aptos_std::type_info;
     use std::error;
-    use std::option::{Self, Option};
+    use std::option::{Option};
     use std::signer;
     use std::string::{String};
-    use std::vector;
-    use townesquare::post::{Self, Public, Private};
+    use townesquare::post::{Self, Public};
     use townesquare::referral;
     use townesquare::user::{Self, Personal, Creator, Moderator};
 
@@ -30,7 +25,7 @@ module townesquare::core {
     // Constants
     // ---------
 
-    const DATA_SEED: vector<u8> = b"Townesquare Data";
+    const TS_DATA_SEED: vector<u8> = b"TownesquareDataSeed";
 
     // -------
     // Structs
@@ -53,29 +48,22 @@ module townesquare::core {
     // Initialize Function
     // -------------------
 
-    fun init_module(signer_ref: &signer) acquires Data {
+    fun init_module(signer_ref: &signer) {
         assert!(signer::address_of(signer_ref) == @townesquare, error::permission_denied(1));
         // Create a resource account and store signing capabilities
-        let (resource_acc_signer, signer_cap) = account::create_resource_account(signer_ref, DATA_SEED);
-        // Create a resource account and store signing capabilities
-        let (_, signer_cap) = account::create_resource_account(
-            signer_ref,
-            DATA_SEED
-        );
+        let (resource_acc_signer, signer_cap) = account::create_resource_account(signer_ref, TS_DATA_SEED);
         move_to(signer_ref, State { core: signer::address_of(&resource_acc_signer) });
         // init Data resource and move it to state account
         move_to(
-            signer_ref,
+            &resource_acc_signer,
             Data {
                 referral_codes: smart_vector::new<String>(),
                 usernames: smart_vector::new<String>(),
-                signer_cap
+                signer_cap: signer_cap
             }
         );
 
-        let resource_signer = account::create_signer_with_capability(&borrow_global<Data>(@townesquare).signer_cap);
-        // init post module
-        post::init(&resource_signer);
+        // let resource_signer = account::create_signer_with_capability(&borrow_global<Data>(@townesquare).signer_cap);
     }
 
     // ---------------
@@ -101,6 +89,8 @@ module townesquare::core {
             add_referral_code(signer_addr, referral_code);
             // add username to the data resource
             add_username(signer_addr, username);
+            // init post resource
+            post::init(signer_ref);
             // TODO: add event
         } else if (type_info::type_of<Type>() == type_info::type_of<Creator>()) {
             user::create_user_internal<Creator>(signer_ref, pfp, username);
@@ -109,6 +99,8 @@ module townesquare::core {
             add_referral_code(signer_addr, referral_code);
             // add username to the data resource
             add_username(signer_addr, username);
+            // init post resource
+            post::init(signer_ref);
             // TODO: add event
         } else if (type_info::type_of<Type>() == type_info::type_of<Moderator>()) {
             user::create_user_internal<Moderator>(signer_ref, pfp, username);
@@ -117,6 +109,8 @@ module townesquare::core {
             add_referral_code(signer_addr, referral_code);
             // add username to the data resource
             add_username(signer_addr, username);
+            // init post resource
+            post::init(signer_ref);
             // TODO: add event
         } else { assert!(false, 1) }
         
@@ -259,8 +253,6 @@ module townesquare::core {
 
     // Borrow state resource
     inline fun authorized_state_borrow(addr: address): &State acquires State, Data {
-        // assert addr is a ts user
-        user::assert_user_exists(addr);
         borrow_global<State>(@townesquare)
     }
 
@@ -347,5 +339,39 @@ module townesquare::core {
     }
 
     // TODO: get referral list; can be gas heavy
+
+    #[test_only]
+    use std::option;
+
+    #[test_only]
+    use std::string::{Self};
+
+    #[test_only]
+    const USERNAME: vector<u8> = b"username";
+    const REFERRAL_CODE: vector<u8> = b"referral_code";
+
+    #[test(aptos_framework = @0x1, alice = @0x123, townesquare = @townesquare, pfp = @345)]
+    fun test(
+        aptos_framework: &signer,
+        alice: &signer,
+        townesquare: &signer,
+        pfp: address
+    ) acquires Data, State {
+        timestamp::set_time_has_started_for_testing(aptos_framework);
+        init_module(townesquare);
+        create_user<Personal>(
+            alice,
+            pfp,
+            string::utf8(REFERRAL_CODE),
+            option::none(), // no referrer
+            string::utf8(USERNAME)
+        );
+        create_post<Public>(
+            alice,
+            string::utf8(b"content"),
+            string::utf8(b"description")
+        );
+    
+    }
 
 }

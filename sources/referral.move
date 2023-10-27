@@ -22,8 +22,6 @@
         - set funcs visibity
 */
 module townesquare::referral {
-    use aptos_std::smart_vector::{Self, SmartVector};
-    use aptos_std::type_info;
     use std::option::{Self, Option};
     use std::signer;
     use std::string::{String};
@@ -137,6 +135,7 @@ module townesquare::referral {
     inline fun authorized_borrow(signer_ref: &signer, user_addr: address): &Referral {
         let signer_addr = signer::address_of(signer_ref);
         // assert signer and user exist
+        assert!(exists<Referral>(signer_addr), 1);
         assert!(exists<Referral>(user_addr), 1);
         borrow_global<Referral>(user_addr)
     }
@@ -156,6 +155,7 @@ module townesquare::referral {
 
     // get referrer address
     public fun referrer(referral: &Referral): address {
+        assert!(!option::is_none<address>(&referral.referrer), 1);
         *option::borrow<address>(&referral.referrer)
     }
 
@@ -175,6 +175,14 @@ module townesquare::referral {
     public fun get_referrer_address(signer_ref: &signer, user_addr: address): address acquires Referral {
         let referral = authorized_borrow(signer_ref, user_addr);
         *option::borrow<address>(&referral.referrer)
+    }
+
+    #[view]
+    public fun has_referrer(signer_ref: &signer, user_addr: address): (bool, address) acquires Referral {
+        let referral = authorized_borrow(signer_ref, user_addr);
+        if (option::is_none<address>(&referral.referrer) == false)
+        return (true, *option::borrow<address>(&referral.referrer));
+        (false, @0x0)
     }
 
 }

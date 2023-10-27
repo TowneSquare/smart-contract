@@ -8,8 +8,7 @@
 */
 
 module townesquare::post {
-    use aptos_framework::guid::{Self, ID};
-    use aptos_framework::timestamp;
+    use aptos_framework::guid::{Self};
 
     use aptos_std::from_bcs;
     use aptos_std::smart_table::{Self, SmartTable};
@@ -18,12 +17,11 @@ module townesquare::post {
     use std::bcs;
     use std::error;
     use std::hash;
-    use std::option::{Self, Option};
     use std::signer;
     use std::string::{String};
     use std::vector;
 
-    use townesquare::user::{Self, User, Moderator};
+    use townesquare::user;
 
     friend townesquare::core;
 
@@ -130,7 +128,7 @@ module townesquare::post {
                 &mut public_posts_resource.table, 
                 post_address
             );
-            // TODO: decrement post tracker
+            user::decrement_post_tracker(signer_ref);
 
         // if private
         } else if (type_info::type_of<Visibility>() == type_info::type_of<Private>()){
@@ -143,19 +141,19 @@ module townesquare::post {
                 &mut private_posts_resource.table, 
                 post_address
             );
-            // TODO: decrement post tracker
+            user::decrement_post_tracker(signer_ref);
 
         };
     }
 
     // Force delete post; callable only by moderators
-    public(friend) fun force_delete_post_internal(
-        signer_ref: &signer,
-        user_addr: address,
-        id_creation_num: u64
-    ) {
-        // signer_addr is MODERATOR
-    }
+    // public(friend) fun force_delete_post_internal(
+    //     signer_ref: &signer,
+    //     user_addr: address,
+    //     id_creation_num: u64
+    // ) {
+    //     // signer_addr is MODERATOR
+    // }
 
     // ------
     // Inline
