@@ -4,7 +4,7 @@
 
     TODO: 
         - add encryption to private posts
-        - change creation number to id; store id instead?
+        - create post events
 */
 
 module townesquare::post {
@@ -76,7 +76,7 @@ module townesquare::post {
         description: String,
         id_creation_num: u64,
         timestamp: u64
-    ) acquires Public, Private {
+    ): address acquires Public, Private {
         let user_addr = signer::address_of(signer_ref);
         let post_address = create_post_address(user_addr, id_creation_num);
         // if public
@@ -92,9 +92,10 @@ module townesquare::post {
                     id_creation_num: id_creation_num,
                     timestamp: timestamp
                 }
-            )
+            );
+            return post_address
         // if private
-        } else if (type_info::type_of<Visibility>() == type_info::type_of<Private>()){
+        } else if (type_info::type_of<Visibility>() == type_info::type_of<Private>()) {
             let private_posts = borrow_global_mut<Private>(user_addr);
             smart_table::add<address, Post>(
                 &mut private_posts.table, 
@@ -106,9 +107,10 @@ module townesquare::post {
                     id_creation_num: id_creation_num,
                     timestamp: timestamp
                 }
-            )
+            );
+            return post_address
         };
-
+        return @0x0
     }
 
     // Delete a post
@@ -197,5 +199,9 @@ module townesquare::post {
     // --------
 
     // TODO: change post visibility
+
+    // ----------
+    // Unit tests
+    // ----------
 
 }

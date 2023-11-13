@@ -44,7 +44,7 @@ module townesquare::user {
     struct User has key {
         addr: address,  // immutable for security reasons
         pfp: address,   // address of nft
-        username: String    // immutable?
+        username: String    
     }
 
     // user types; user can have multiple types
@@ -269,7 +269,7 @@ module townesquare::user {
             exists<Creator>(addr) ||
             exists<Moderator>(addr),
             1
-            );
+        );
     }
 
     // assert user does not exist; assert user address does not exist under any type
@@ -366,7 +366,8 @@ module townesquare::user {
     public fun get_creator_from_address(
         maybe_user_addr: address
     ): (User, Creator)acquires User {
-        assert!(exists<User>(maybe_user_addr), 1);    // user does not exist under this type
+        assert!(exists<User>(maybe_user_addr), 1);
+        assert!(exists<Creator>(maybe_user_addr), 1); // user does not exist under this type
         let user_resource = borrow_global<User>(maybe_user_addr);
         (
             User {
@@ -398,7 +399,6 @@ module townesquare::user {
     public fun get_personal_username(
         maybe_user: address
     ): String acquires User {
-        assert!(exists<User>(maybe_user), 1);    // user does not exist under this type
         assert!(is_user_of_type<Personal>(maybe_user), 1);   
         borrow_global<User>(maybe_user).username
     }
@@ -408,8 +408,7 @@ module townesquare::user {
     public fun get_creator_username(
         maybe_user: address
     ): String acquires User {
-        assert!(exists<User>(maybe_user), 1);    // user does not exist under this type
-        assert!(exists<Creator>(maybe_user), 1);
+        assert!(is_user_of_type<Creator>(maybe_user), 1);  
         borrow_global<User>(maybe_user).username
     }
 
@@ -418,8 +417,7 @@ module townesquare::user {
     public fun get_moderator_username(
         maybe_user: address
     ): String acquires User {
-        assert!(exists<User>(maybe_user), 1);    // user does not exist under this type
-        assert!(exists<Moderator>(maybe_user), 1);
+        assert!(is_user_of_type<Moderator>(maybe_user), 1);  
         borrow_global<User>(maybe_user).username
     }
 
@@ -428,8 +426,7 @@ module townesquare::user {
     public fun get_personal_pfp(
         maybe_user: address
     ): address acquires User {
-        assert!(exists<User>(maybe_user), 1);    // user does not exist under this type
-        assert!(exists<Personal>(maybe_user), 1);
+        assert!(is_user_of_type<Personal>(maybe_user), 1);  
         borrow_global<User>(maybe_user).pfp
     }
 
@@ -621,6 +618,13 @@ module townesquare::user {
     // Unit Tests
     // ----------
  
+    #[test_only]
+    use townesquare::referral;
+    use aptos_framework::account;
+    use aptos_framework::aptos_coin::{Self, AptosCoin};
+    use aptos_framework::managed_coin;
+    use std::option::{Self, Option};
+
     /* 
         ----------------------------- Private tests --------------------------------
 
@@ -663,7 +667,7 @@ module townesquare::user {
     
     #[test(user = @0x123)]
     // create moderator user
-    fun create_moderator_user_test(user: &signer) acquires PostTracker {
+    fun create_moderator_user_test_(user: &signer) acquires PostTracker {
         create_user_internal<Moderator>(user, @0x0, string::utf8(b"test"));
         // assert user exists
         assert_user_exists(signer::address_of(user));
@@ -736,7 +740,41 @@ module townesquare::user {
         as doing so won't allow for adding more types in the future
     */
     
+    #[test(user = @0x123)]
+    // create_user_internal
+    public fun create_personal_user_for_test(user: &signer) {
+        account::create_account_for_test(signer::address_of(user));
+        managed_coin::register<AptosCoin>(user);
+        // TODO: should not be using internal func
+        create_user_internal<Personal>(user, @0x0, string::utf8(b"test"));
+        // Create referral; doesn't have referral so returns none
+        referral::create_referral(user, string::utf8(b"test"), option::none());
+        assert!(exists<Personal>(signer::address_of(user)), 1);
+    }
 
+    #[test(user = @0x123, referrer_addr = @0x456)]
+    // create_user_internal with referrer
+    public fun create_personal_user_with_referrer_for_test(user: &signer, referrer_addr: address) {
+        account::create_account_for_test(signer::address_of(user));
+        managed_coin::register<AptosCoin>(user);
+        // TODO: should not be using internal func
+        create_user_internal<Personal>(user, @0x0, string::utf8(b"test"));
+        // Create referral
+        let referrer = option::none<address>();
+        option::fill<address>(&mut referrer, referrer_addr);
+        referral::create_referral(user, string::utf8(b"test"), referrer);
+        assert!(exists<Personal>(signer::address_of(user)), 1);
+    }
+
+    #[test(user = @0x123)]
+    public fun create_moderator_user_test(user: &signer) {
+        account::create_account_for_test(signer::address_of(user));
+        managed_coin::register<AptosCoin>(user);
+        create_user_internal<Moderator>(user, @0x0, string::utf8(b"test"));
+        // Create referral; doesn't have referral so returns none
+        referral::create_referral(user, string::utf8(b"test"), option::none());
+        assert!(exists<Moderator>(signer::address_of(user)), 1);
+    }
 
     #[test(user = @0x123)]
     // delete_user_internal

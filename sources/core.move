@@ -350,6 +350,13 @@ module townesquare::core {
     const USERNAME: vector<u8> = b"username";
     const REFERRAL_CODE: vector<u8> = b"referral_code";
 
+    #[test(townesquare = @townesquare)]
+    public fun init_test(
+        townesquare: &signer
+    ) {
+        init_module(townesquare);
+    }
+
     #[test(aptos_framework = @0x1, alice = @0x123, townesquare = @townesquare, pfp = @345)]
     fun test(
         aptos_framework: &signer,
@@ -371,7 +378,5 @@ module townesquare::core {
             string::utf8(b"content"),
             string::utf8(b"description")
         );
-    
     }
-
 }
