@@ -1,10 +1,13 @@
 [package]
-name = 'townesquare_sc'
-version = '1.0.0'
-[dependencies.AptosFramework]
-git = 'https://github.com/aptos-labs/aptos-core.git'
-rev = 'main'
-subdir = 'aptos-move/framework/aptos-framework'
+name = "Townesquare"
+version = "0.2.0"
+
 [addresses]
-townesquare_sc='a672d6c0b603583ac511df95ef664dfa01ff25dda7dd92dda894bba6e106f7f6'
-townesquare='a672d6c0b603583ac511df95ef664dfa01ff25dda7dd92dda894bba6e106f7f6'
+townesquare = "0x0743552991f364ab85d7c2ae7e9570bbc80c61d482c323c00b5b5ed4887fe60d"
+
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "mainnet"
+subdir = "aptos-move/framework/aptos-framework"
+
