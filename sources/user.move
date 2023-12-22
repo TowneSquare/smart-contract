@@ -620,10 +620,10 @@ module townesquare::user {
  
     #[test_only]
     use townesquare::referral;
+    use aptos_framework::aptos_coin::{AptosCoin};
+    use std::option;
     use aptos_framework::account;
-    use aptos_framework::aptos_coin::{Self, AptosCoin};
     use aptos_framework::managed_coin;
-    use std::option::{Self, Option};
 
     /* 
         ----------------------------- Private tests --------------------------------

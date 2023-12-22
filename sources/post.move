@@ -9,21 +9,12 @@
 
 module townesquare::post {
     use aptos_framework::event;
-    use aptos_framework::guid::{Self};
     use aptos_framework::object::{Self, Object};
 
-    use aptos_std::from_bcs;
-    use aptos_std::smart_table::{Self, SmartTable};
     use aptos_std::type_info;
 
-    use std::bcs;
     use std::error;
-    use std::hash;
     use std::signer;
-    use std::string::{String};
-    use std::vector;
-
-    use townesquare::user;
 
     friend townesquare::core;
 
@@ -161,6 +152,7 @@ module townesquare::post {
 
     #[test_only]
     use std::features;
+    use std::vector;
 
     #[test_only]
     public fun init_test(ts: &signer) {

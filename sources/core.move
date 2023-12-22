@@ -10,8 +10,6 @@
 
 module townesquare::core {
     use aptos_framework::account::{Self, SignerCapability};
-    use aptos_framework::object;
-    use aptos_framework::timestamp;
     use aptos_std::smart_vector::{Self, SmartVector};
     use aptos_std::type_info;
     use std::error;
@@ -63,8 +61,8 @@ module townesquare::core {
                 signer_cap: signer_cap
             }
         );
-
-        // let resource_signer = account::create_signer_with_capability(&borrow_global<Data>(@townesquare).signer_cap);
+        // init post
+        post::init(signer_ref);
     }
 
     // ---------------
@@ -136,7 +134,6 @@ module townesquare::core {
         content: vector<u8>
     ){
         user::assert_user_exists(signer::address_of(signer_ref));
-        let id_creation_num = user::increment_post_tracker(signer_ref);
         // only public post for now
         post::create_post_internal<Public>(
             signer_ref, 
@@ -338,9 +335,10 @@ module townesquare::core {
 
     #[test_only]
     use std::option;
-
-    #[test_only]
     use std::string::{Self};
+    use std::vector;
+    use aptos_framework::timestamp;
+    use std::features;
 
     #[test_only]
     const USERNAME: vector<u8> = b"username";
@@ -360,6 +358,7 @@ module townesquare::core {
         townesquare: &signer,
         pfp: address
     ) acquires Data, State {
+        features::change_feature_flags(aptos_framework, vector[23, 26], vector[]);
         timestamp::set_time_has_started_for_testing(aptos_framework);
         init_module(townesquare);
         create_user<Personal>(

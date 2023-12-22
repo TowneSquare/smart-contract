@@ -1,9 +1,9 @@
 [package]
 name = "Townesquare"
-version = "0.2.0"
+version = "0.2.1"
 
 [addresses]
-townesquare = "0x0743552991f364ab85d7c2ae7e9570bbc80c61d482c323c00b5b5ed4887fe60d"
+townesquare = "0x2cdf1f17ef5a45e959140abc428ba14aa6d19a1923b2f440a699c04f1930da29"
 
 
 [dependencies.AptosFramework]
