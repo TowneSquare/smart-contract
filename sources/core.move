@@ -10,6 +10,7 @@
 
 module townesquare::core {
     use aptos_framework::account::{Self, SignerCapability};
+    use aptos_framework::object;
     use aptos_framework::timestamp;
     use aptos_std::smart_vector::{Self, SmartVector};
     use aptos_std::type_info;
@@ -116,7 +117,6 @@ module townesquare::core {
         
     }
 
-    // TODO: add user type
     public entry fun add_user_type<Type>(
         signer_ref: &signer
     ) {
@@ -133,18 +133,14 @@ module townesquare::core {
     // Create a post
     public entry fun create_post<Visibility>(
         signer_ref: &signer,
-        content: String,
-        description: String,
+        content: vector<u8>
     ){
         user::assert_user_exists(signer::address_of(signer_ref));
         let id_creation_num = user::increment_post_tracker(signer_ref);
         // only public post for now
         post::create_post_internal<Public>(
             signer_ref, 
-            content, 
-            description, 
-            id_creation_num,
-            timestamp::now_microseconds()
+            content
             );
 
         // TODO: add event
@@ -184,15 +180,15 @@ module townesquare::core {
     }
 
     // Delete a post
-    public entry fun delete_post<Visibility>(
-        signer_ref: &signer,
-        post_address: address
-    ) {
-        user::assert_user_exists(signer::address_of(signer_ref));
-        // only public post for now
-        post::delete_post_internal<Public>(signer_ref, post_address);
-        // TODO: add events 
-    }
+    // public entry fun delete_post<T: key>(
+    //     signer_ref: &signer,
+    //     post_address: address
+    // ) {
+    //     user::assert_user_exists(signer::address_of(signer_ref));
+    //     // only public post for now
+    //     post::delete_post_internal<T>(signer_ref, object::address_to_object<T>(post_address));
+    //     // TODO: add events 
+    // }
 
     // TODO: force delete post; callable only by moderators
 
@@ -375,8 +371,7 @@ module townesquare::core {
         );
         create_post<Public>(
             alice,
-            string::utf8(b"content"),
-            string::utf8(b"description")
+            b"content"
         );
     }
 }
