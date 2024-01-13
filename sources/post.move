@@ -3,8 +3,6 @@
     nfts are all soulbound since we can't actually transfer posts ownership
 
     TODO: 
-        - add encryption to private posts
-        - create post events
 */
 
 module townesquare::post {
@@ -63,6 +61,7 @@ module townesquare::post {
     // --------------
     // Init functions
     // --------------
+    
     public(friend) fun init(ts: &signer) {
         move_to(ts, PostState { next_post_id: 0 });
     }
@@ -99,6 +98,10 @@ module townesquare::post {
         } else { 
             move_to(&object_signer, Private {}); 
         };
+
+        // make the post non-transferable
+        let transfer_ref = object::generate_transfer_ref(&constructor_ref);
+        object::disable_ungated_transfer(&transfer_ref);
 
         post_id
     }
@@ -168,5 +171,4 @@ module townesquare::post {
         let post_id = create_post_internal<Public>(user, vector::empty());
         assert!(post_id == 0, 1);
     }
-
 }

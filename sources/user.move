@@ -15,7 +15,7 @@
         - has unlimited number of connections
 
         Moderator
-        - tbd
+        - 
 
     TODO:
         - add caps so that user can't self-promote to moderator
@@ -29,6 +29,7 @@
 */
 
 module townesquare::user {
+    use aptos_framework::event;
     use aptos_std::type_info;
     use std::signer;
     use std::string::{Self, String};
@@ -55,110 +56,82 @@ module townesquare::user {
     // Post tracker; 
     struct PostTracker has key { 
         user_addr: address,
-        total_posts_created: u64,
-        // TODO: post_created_events: ,
-        // TODO: post_deleted_events: ,
+        total_posts_created: u64
     }
 
     // Activity status
     struct Active has key {}
     struct Inactive has key {}
 
+    // ------
+    // Events
+    // ------
+
+    #[event]
+    // Event for user creation
+    struct UserCreatedEvent<Type: store + drop> has store, drop {
+        user_addr: address,
+        user_type: String
+    }
+    fun emit_user_created_event<Type: store + drop>(user_addr: address) {
+        event::emit<UserCreatedEvent<Type>>(
+            UserCreatedEvent {
+                user_addr: user_addr,
+                user_type: type_info::type_name<Type>()
+            }
+        )
+    }
+
     // ----------------
     // Public functions
     // ----------------
 
     // Create a new user
-    // TODO: should return a user struct and address; address to store it in a global struct
-    public(friend) fun create_user_internal<T>(
+    public(friend) fun create_user_internal<T: store + drop>(
         signer_ref: &signer,
         pfp: address,
         username: String
     ) {
         let signer_addr = signer::address_of(signer_ref);
         // TODO: init module from tx contracts
-        // TODO: store address in a global struct
         let user_addr = signer_addr;
+        if (!exists<User>(signer_addr)) {
+            // init post tracker
+            move_to(
+                signer_ref,
+                PostTracker {
+                    user_addr: user_addr,
+                    total_posts_created: 0
+                }
+            );
+            // user is inactive by default
+            move_to(signer_ref, Inactive {});
+            move_to(
+                signer_ref,
+                User {
+                    addr: signer_addr,
+                    pfp: pfp,
+                    username: username
+                }
+            );
+        };
         // store based on type
         if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
             // assert personal user doesn't exist
             assert!(!exists<Personal>(signer_addr), 1);
-            if (!exists<User>(signer_addr)) {
-                // init post tracker
-                move_to(
-                    signer_ref,
-                    PostTracker {
-                        user_addr: user_addr,
-                        total_posts_created: 0
-                    }
-                );
-                // user is inactive by default
-                move_to(signer_ref, Inactive {});
-                move_to(
-                    signer_ref,
-                    User {
-                        addr: signer_addr,
-                        pfp: pfp,
-                        username: username
-                    }
-                );
-            };
             // move type resource under signer's address
             move_to(signer_ref, Personal {});
-            // TODO: event returning the user and its type
         } else if (type_info::type_of<T>() == type_info::type_of<Creator>()) {
-            // assert creator user doesn't exist
-            assert!(!exists<Creator>(signer_addr), 1);
-            if (!exists<User>(signer_addr)) {
-                // init post tracker
-                move_to(
-                    signer_ref,
-                    PostTracker {
-                        user_addr: user_addr,
-                        total_posts_created: 0
-                    }
-                );
-                // user is inactive by default
-                move_to(signer_ref, Inactive {});
-                move_to(
-                    signer_ref,
-                    User {
-                        addr: signer_addr,
-                        pfp: pfp,
-                        username: username
-                    }
-                );
-            };
             // move type resource under signer's address
             move_to(signer_ref, Creator {});
-            // TODO: event returning the user and its type
-        } else if (type_info::type_of<T>() == type_info::type_of<Moderator>()) {
+        } else {
             // assert moderator user doesn't exist
             assert!(!exists<Moderator>(signer_addr), 1);
-            if (!exists<User>(signer_addr)) {
-                // init post tracker
-                move_to(
-                    signer_ref,
-                    PostTracker {
-                        user_addr: user_addr,
-                        total_posts_created: 0
-                    }
-                );
-                // user is inactive by default
-                move_to(signer_ref, Inactive {});
-                move_to(
-                    signer_ref,
-                    User {
-                        addr: signer_addr,
-                        pfp: pfp,
-                        username: username
-                    }
-                );
-            };
             // move type resource under signer's address
             move_to(signer_ref, Moderator {});
-            // TODO: event returning the user and its type
-        } else { assert!(false, 1); }
+        };
+        // emit event
+        emit_user_created_event<T>(signer_addr);
     }
 
     // Add type to user
@@ -809,9 +782,4 @@ module townesquare::user {
         // assert user is inactive
         assert!(address_is_inactive(signer::address_of(user)), 1);
     }
-
-    // TODO: test getters
-
-    // TODO: test setters
-
 }

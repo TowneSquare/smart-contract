@@ -1,11 +1,5 @@
 /*
     core module; this will be the entry point for all other modules
-
-    TODO:
-        - add blacklist mechanism from transaction contract
-        - implement an emergency mechanism
-        - organise functions per type
-
 */
 
 module townesquare::core {
@@ -47,7 +41,7 @@ module townesquare::core {
     // Initialize Function
     // -------------------
 
-    fun init_module(signer_ref: &signer) {
+    public entry fun init(signer_ref: &signer) {
         assert!(signer::address_of(signer_ref) == @townesquare, error::permission_denied(1));
         // Create a resource account and store signing capabilities
         let (resource_acc_signer, signer_cap) = account::create_resource_account(signer_ref, TS_DATA_SEED);
@@ -79,6 +73,12 @@ module townesquare::core {
         referrer: Option<address>,
         username: String
     ) acquires State, Data {
+        assert!(
+            type_info::type_of<Type>() == type_info::type_of<Personal>()
+            || type_info::type_of<Type>() == type_info::type_of<Creator>()
+            || type_info::type_of<Type>() == type_info::type_of<Moderator>(),
+            1
+        );
         let signer_addr = signer::address_of(signer_ref);
         // create user based on type
         if (type_info::type_of<Type>() == type_info::type_of<Personal>()) {
@@ -101,7 +101,7 @@ module townesquare::core {
             // init post resource
             post::init(signer_ref);
             // TODO: add event
-        } else if (type_info::type_of<Type>() == type_info::type_of<Moderator>()) {
+        } else {
             user::create_user_internal<Moderator>(signer_ref, pfp, username);
             // create referral and add it to vector
             referral::create_referral(signer_ref, referral_code, referrer);
@@ -111,8 +111,7 @@ module townesquare::core {
             // init post resource
             post::init(signer_ref);
             // TODO: add event
-        } else { assert!(false, 1) }
-        
+        };
     }
 
     public entry fun add_user_type<Type>(
@@ -348,7 +347,7 @@ module townesquare::core {
     public fun init_test(
         townesquare: &signer
     ) {
-        init_module(townesquare);
+        init(townesquare);
     }
 
     #[test(aptos_framework = @0x1, alice = @0x123, townesquare = @townesquare, pfp = @345)]
@@ -360,7 +359,7 @@ module townesquare::core {
     ) acquires Data, State {
         features::change_feature_flags(aptos_framework, vector[23, 26], vector[]);
         timestamp::set_time_has_started_for_testing(aptos_framework);
-        init_module(townesquare);
+        init(townesquare);
         create_user<Personal>(
             alice,
             pfp,
