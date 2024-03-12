@@ -2,21 +2,6 @@
     Module for user
     - user types: personal, creator, moderator
 
-        Personal
-        - can create posts
-        - can connect to other users
-        - can use ts features
-        - has limited number of connections
-
-        Creator
-        - can create posts
-        - can connect to other users
-        - can use ts features
-        - has unlimited number of connections
-
-        Moderator
-        - 
-
     TODO:
         - add caps so that user can't self-promote to moderator
         - add unit tests
@@ -26,6 +11,7 @@
         - organise functions
         - not all of the current funcs that are tagged with #[view] are actually views, fix it
         - create_user_internal should be optimised
+        - assert the pfp is owned by the user
 */
 
 module townesquare::user {
@@ -93,7 +79,8 @@ module townesquare::user {
         username: String
     ) {
         let signer_addr = signer::address_of(signer_ref);
-        // TODO: init module from tx contracts
+        // TODO: assert the NFT from pfp is owned by the signer
+
         let user_addr = signer_addr;
         if (!exists<User>(signer_addr)) {
             // init post tracker
