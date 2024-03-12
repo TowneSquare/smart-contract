@@ -27,7 +27,7 @@ module townesquare::user {
     // Structs
     // -------
 
-    // Storage for user
+    /// Storage for user
     struct User has key {
         addr: address,  // immutable for security reasons
         pfp: address,   // address of nft
@@ -35,17 +35,21 @@ module townesquare::user {
     }
 
     // user types; user can have multiple types
+
+    /// Global storage for personal user
     struct Personal has drop, store, key {}
+    /// Global storage for creator user
     struct Creator has drop, store, key {}
+    /// Global storage for moderator user
     struct Moderator has drop, store, key {}
 
-    // Post tracker; 
+    /// Post tracker; 
     struct PostTracker has key { 
         user_addr: address,
         total_posts_created: u64
     }
 
-    // Activity status
+    /// Activity status
     struct Active has key {}
     struct Inactive has key {}
 
@@ -54,7 +58,7 @@ module townesquare::user {
     // ------
 
     #[event]
-    // Event for user creation
+    /// Event for user creation
     struct UserCreatedEvent<Type: store + drop> has store, drop {
         user_addr: address,
         user_type: String
@@ -72,7 +76,7 @@ module townesquare::user {
     // Public functions
     // ----------------
 
-    // Create a new user
+    /// Create a new user
     public(friend) fun create_user_internal<T: store + drop>(
         signer_ref: &signer,
         pfp: address,
@@ -121,7 +125,7 @@ module townesquare::user {
         emit_user_created_event<T>(signer_addr);
     }
 
-    // Add type to user
+    /// Add type to user
     public(friend) fun add_user_type_internal<T>(
         signer_ref: &signer
     ) {
@@ -150,7 +154,7 @@ module townesquare::user {
         } else { assert!(false, 1); }
     }
 
-    // Delete a user type
+    /// Delete a user type
     public(friend) fun delete_user_type_internal<T>(
         signer_ref: &signer
     ) acquires Creator, Moderator, Personal {
@@ -194,7 +198,7 @@ module townesquare::user {
         } else { assert!(false, 1); }
     }
 
-    // Delete a user alongside all its types
+    /// Delete a user alongside all its types
     public(friend) fun delete_user_internal(
         signer_ref: &signer
     ) acquires User, Creator, Moderator, Personal, PostTracker {
@@ -222,7 +226,7 @@ module townesquare::user {
     // Asserts
     // -------
     
-    // assert user exists; checks if users exists under any type
+    /// assert user exists; checks if users exists under any type
     public fun assert_user_exists(addr: address) {
         assert!(
             exists<Personal>(addr) ||
@@ -232,7 +236,7 @@ module townesquare::user {
         );
     }
 
-    // assert user does not exist; assert user address does not exist under any type
+    /// assert user does not exist; assert user address does not exist under any type
     public fun assert_user_does_not_exist(addr: address) {
         assert!(
             !exists<Personal>(addr) &&
@@ -246,7 +250,7 @@ module townesquare::user {
     // Accessors
     // ---------
 
-    // returns User of type Personal
+    /// returns User of type Personal
     public(friend) fun get_username<T>(
         signer_ref: &signer,
         user_addr: address
@@ -270,7 +274,7 @@ module townesquare::user {
         } else { string::utf8(b"") }
     }
 
-    // Change user's activity status from X to Y
+    /// Change user's activity status from X to Y
     fun change_activity_status<X, Y>(signer_ref: &signer) acquires Active, Inactive {
         assert!(type_info::type_of<X>() != type_info::type_of<Y>(), 1);
         // from Inactive to Active
@@ -296,7 +300,7 @@ module townesquare::user {
     // TODO
     // #[view]
     // // Get all user types; callable by anyone using ts
-    // public entry fun get_all_user_types(signer_ref: &signer): vector {
+    /// public entry fun get_all_user_types(signer_ref: &signer): vector {
     //     let signer_addr = signer::address_of(signer_ref);
     //     assert_user_exists(signer_addr);
     //     let user_types = vector::empty<User>();
@@ -306,7 +310,7 @@ module townesquare::user {
 
     // User
     #[view]
-    // Get user of type personal from address
+    /// Get user of type personal from address
     public fun get_personal_from_address(
         maybe_user_addr: address
     ): (User, Personal) acquires User {
@@ -322,7 +326,7 @@ module townesquare::user {
     }
 
     #[view]
-    // Get user of type creator from address
+    /// Get user of type creator from address
     public fun get_creator_from_address(
         maybe_user_addr: address
     ): (User, Creator)acquires User {
@@ -339,7 +343,7 @@ module townesquare::user {
     }
 
     #[view]
-    // Get user of type moderator from address
+    /// Get user of type moderator from address
     public fun get_moderator_from_address(
         maybe_user_addr: address
     ): (User, Moderator) acquires User {
@@ -355,7 +359,7 @@ module townesquare::user {
     }
 
     #[view]
-    // Get personal username from address
+    /// Get personal username from address
     public fun get_personal_username(
         maybe_user: address
     ): String acquires User {
@@ -364,7 +368,7 @@ module townesquare::user {
     }
 
     #[view]
-    // Get creator username from address
+    /// Get creator username from address
     public fun get_creator_username(
         maybe_user: address
     ): String acquires User {
@@ -373,7 +377,7 @@ module townesquare::user {
     }
 
     #[view]
-    // Get moderator username from address
+    /// Get moderator username from address
     public fun get_moderator_username(
         maybe_user: address
     ): String acquires User {
@@ -382,7 +386,7 @@ module townesquare::user {
     }
 
     #[view]
-    // Get personal pfp from address
+    /// Get personal pfp from address
     public fun get_personal_pfp(
         maybe_user: address
     ): address acquires User {
@@ -394,7 +398,7 @@ module townesquare::user {
     // TODO: get moderator pfp from address
 
     #[view]
-    // verify an address is a user giving type and address; callable by anyone
+    /// verify an address is a user giving type and address; callable by anyone
     public fun is_user(
         addr: address
     ): bool {
@@ -402,7 +406,7 @@ module townesquare::user {
     }
 
     #[view]
-    // User exists and of type T
+    /// User exists and of type T
     public fun is_user_of_type<T>(
         maybe_user_addr: address
     ): bool {
@@ -420,7 +424,7 @@ module townesquare::user {
     // TODO
 
     #[view]
-    // Returns the total number of posts created by a user; TODO: callable by anyone?
+    /// Returns the total number of posts created by a user; TODO: callable by anyone?
     public fun get_created_posts_total_number(
         user_addr: address
     ): u64 acquires PostTracker {
@@ -428,28 +432,26 @@ module townesquare::user {
         borrow_global<PostTracker>(user_addr).total_posts_created
     }
 
-    // Self activity
-
     #[view]
+    /// Checks if signer is active
     public fun signer_is_active(signer_ref: &signer): bool {
         address_is_active(signer::address_of(signer_ref))
     }
 
     #[view]
+    /// Checks if signer is inactive
     public fun signer_is_inactive(signer_ref: &signer): bool {
         address_is_inactive(signer::address_of(signer_ref))
     }
 
-    // Another user's activity; callable by anyone
-
     #[view]
-    // Checks if user is an active
+    /// Checks if user is an active
     public fun address_is_active(user_addr: address): bool {
         exists<Active>(user_addr)
     }
 
     #[view]
-    // Checks if user is inactive
+    /// Checks if user is inactive
     public fun address_is_inactive(user_addr: address): bool {
         exists<Inactive>(user_addr)
     }
@@ -458,7 +460,7 @@ module townesquare::user {
     // mutators
     // --------
 
-    // Change username
+    /// Change username
     public(friend) fun set_username_internal<T: drop + store + key>(
         signer_ref: &signer,
         new_username: String
@@ -478,7 +480,7 @@ module townesquare::user {
         } else { assert!(false, 1); }
     }
 
-    // Change pfp 
+    /// Change pfp 
     public(friend) fun set_pfp_internal<T: drop + store + key>(
         signer_ref: &signer,
         new_pfp: address
@@ -498,7 +500,7 @@ module townesquare::user {
         } else { assert!(false, 1); }
     }
 
-    // Change user type from X to Y
+    /// Change user type from X to Y
     public(friend) fun change_user_type<X, Y>(
         signer_ref: &signer
     ) acquires Creator, Moderator, Personal {
@@ -531,7 +533,7 @@ module townesquare::user {
         
     }
 
-    // Change user's activity status from Inactive to Active
+    /// Change user's activity status from Inactive to Active
     public(friend) fun change_activity_status_from_inactive_to_active(
         signer_ref: &signer
     ) acquires Active, Inactive {
@@ -554,7 +556,7 @@ module townesquare::user {
         post_tracker.total_posts_created
     }
 
-    // decrement post tracker; this will decrement the total_posts_created and return it
+    /// decrement post tracker; this will decrement the total_posts_created and return it
     public(friend) fun decrement_post_tracker(
         signer_ref: &signer
     ): u64 acquires PostTracker {
@@ -563,7 +565,7 @@ module townesquare::user {
         post_tracker.total_posts_created
     }
 
-    // delete post tracker
+    /// delete post tracker
     fun delete_post_tracker(
         signer_ref: &signer
     ) acquires PostTracker {
