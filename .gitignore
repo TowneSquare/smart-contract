@@ -1,4 +1,4 @@
 /build
 /.aptos
 .trace
-.coverage_map
+.coverage_map.mvcov
