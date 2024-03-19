@@ -67,20 +67,14 @@ module townesquare::core {
     // Entry Functions
     // ---------------
     
-    /// Create a new user
-    public entry fun create_user<Type>(
+    /// Create a new user; personal by default
+    public entry fun create_user(
         signer_ref: &signer,
         referral_code: String,
         referrer: Option<address>,
         username: String
     ) acquires State, Data {
-        assert!(
-            type_info::type_of<Type>() == type_info::type_of<Personal>()
-            || type_info::type_of<Type>() == type_info::type_of<Creator>()
-            || type_info::type_of<Type>() == type_info::type_of<Moderator>(),
-            1
-        );
-        user::create_user_internal<Creator>(signer_ref, username);
+        user::create_user_internal<Personal>(signer_ref, username);
         // create referral and add it to vector
         referral::create_referral(signer_ref, referral_code, referrer);
         add_referral_code(referral_code);
