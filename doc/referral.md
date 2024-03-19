@@ -12,6 +12,7 @@
 -  [Function `referrer`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_referral_referrer)
 -  [Function `get_referral_code`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_referral_get_referral_code)
 -  [Function `get_referrer_address`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_referral_get_referrer_address)
+-  [Function `has_referrer`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_referral_has_referrer)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -103,4 +104,17 @@ Get the referrer address of the signer
 
 <pre><code>#[view]
 <b>public</b> <b>fun</b> <a href="referral.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_referral_get_referrer_address">get_referrer_address</a>(signer_ref: &<a href="">signer</a>): <b>address</b>
+</code></pre>
+
+
+
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_referral_has_referrer"></a>
+
+## Function `has_referrer`
+
+Returns true if the signer has a referrer
+
+
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="referral.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_referral_has_referrer">has_referrer</a>(signer_ref: &<a href="">signer</a>): bool
 </code></pre>
