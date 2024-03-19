@@ -53,8 +53,8 @@ module townesquare::user {
 
     /// Storage for user
     struct User has key {
-        addr: address,  // immutable for security reasons
-        username: String    
+        addr: address,  
+        username: String    // immutable
     }
 
     // user types; user can have multiple types
@@ -239,7 +239,7 @@ module townesquare::user {
         User { addr: _, username: _ } = move_from<User>(signer_addr);
         // delete post tracker
         delete_post_tracker(signer_ref);
-        // TODO: delete posts; should be done in core
+        // TODO: delete posts; should be done in core?
     }
 
     // -------
@@ -248,22 +248,12 @@ module townesquare::user {
     
     /// assert user exists; checks if users exists under any type
     public fun assert_user_exists(addr: address) {
-        assert!(
-            exists<Personal>(addr) ||
-            exists<Creator>(addr) ||
-            exists<Moderator>(addr),
-            EUSER_DOES_NOT_EXIST
-        );
+        assert!(exists<User>(addr), EUSER_DOES_NOT_EXIST);
     }
 
     /// assert user does not exist; assert user address does not exist under any type
     public fun assert_user_does_not_exist(addr: address) {
-        assert!(
-            !exists<Personal>(addr) &&
-            !exists<Creator>(addr) &&
-            !exists<Moderator>(addr),
-            EUSER_EXISTS
-        );
+        assert!(!exists<User>(addr), EUSER_EXISTS);
     }
 
     // ---------
@@ -422,26 +412,6 @@ module townesquare::user {
     // --------
     // mutators
     // --------
-
-    /// Change username
-    public(friend) fun set_username_internal<T: drop + store + key>(
-        signer_ref: &signer,
-        new_username: String
-    ) acquires User {
-        let signer_addr = signer::address_of(signer_ref);
-        let user = borrow_global_mut<User>(signer_addr);
-        // based on type
-        if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
-            assert!(exists<Personal>(signer_addr), EUSER_OF_TYPE_DOES_NOT_EXIST);
-            user.username = new_username;
-        } else if (type_info::type_of<T>() == type_info::type_of<Creator>()) {
-            assert!(exists<Creator>(signer_addr), EUSER_OF_TYPE_DOES_NOT_EXIST);
-            user.username = new_username;
-        } else if (type_info::type_of<T>() == type_info::type_of<Moderator>()) {
-            assert!(exists<Moderator>(signer_addr), EUSER_OF_TYPE_DOES_NOT_EXIST);
-            user.username = new_username;
-        } else { abort(EINVALID_USER_TYPE) }
-    }
 
     /// Change user type from X to Y
     public(friend) fun change_user_type<X, Y>(
@@ -622,7 +592,7 @@ module townesquare::user {
     }
 
     #[test(user = @0x123)]
-    #[expected_failure(abort_code = 1, location = Self)]   // TODO: change code when implementing ERRORS consts
+    #[expected_failure(abort_code = 3, location = Self)]   // TODO: change code when implementing ERRORS consts
     // Create already existing user of type personal
     fun create_existing_user_test(user: &signer) acquires PostTracker {
         create_personal_user_test(user);

@@ -32,8 +32,8 @@ module townesquare::core {
         core: address
     }
 
-    // Global storage for data that needs checks with every new entry.
-    // Only TS can initiate and write to this storage.
+    /// Global storage for data that needs checks with every new entry.
+    /// Only TS can initiate and write to this storage.
     struct Data has key {
         referral_codes: SmartVector<String>,
         usernames: SmartVector<String>,
@@ -67,9 +67,7 @@ module townesquare::core {
     // Entry Functions
     // ---------------
     
-    // Creation
-
-    // Create a new user
+    /// Create a new user
     public entry fun create_user<Type>(
         signer_ref: &signer,
         referral_code: String,
@@ -82,17 +80,17 @@ module townesquare::core {
             || type_info::type_of<Type>() == type_info::type_of<Moderator>(),
             1
         );
-        let signer_addr = signer::address_of(signer_ref);
         user::create_user_internal<Creator>(signer_ref, username);
         // create referral and add it to vector
         referral::create_referral(signer_ref, referral_code, referrer);
-        add_referral_code(signer_addr, referral_code);
+        add_referral_code(referral_code);
         // add username to the data resource
-        add_username(signer_addr, username);
+        add_username(username);
         // init post resource
         post::init(signer_ref);
     }
 
+    /// Add a user type
     public entry fun add_user_type<Type>(
         signer_ref: &signer
     ) {
@@ -106,7 +104,7 @@ module townesquare::core {
         // TODO: moderator is added done manually for now
     }
 
-    // Create a post
+    /// Create a post
     public entry fun create_post<Visibility>(
         signer_ref: &signer,
         content: vector<u8>
@@ -123,7 +121,7 @@ module townesquare::core {
 
     // Deletion
 
-    // Delete a user given a type
+    /// Delete a user given a type
     public entry fun delete_user_type<Type>(
         signer_ref: &signer
     ) {
@@ -141,7 +139,7 @@ module townesquare::core {
         referral::remove_referral(signer_ref);
     }
 
-    // Delete a user; all types
+    /// Delete a user; all types
     public entry fun delete_user(
         signer_ref: &signer
     ) acquires State, Data {
@@ -149,8 +147,8 @@ module townesquare::core {
         user::delete_user_internal(signer_ref);
         referral::remove_referral(signer_ref);
         // data resource related
-        remove_referral(user_addr, referral::get_referral_code(signer_ref));
-        remove_username(user_addr, user::get_username_from_address(user_addr));
+        remove_referral(referral::get_referral_code(signer_ref));
+        remove_username(user::get_username_from_address(user_addr));
         // TODO: add events
     }
 
@@ -167,32 +165,13 @@ module townesquare::core {
 
     // TODO: force delete post; callable only by moderators
 
-    // Update
-
-    // User related
-    public entry fun set_username<Type>(
-        signer_ref: &signer,
-        new_username: String
-    ) {
-        // based on type
-        if (type_info::type_of<Type>() == type_info::type_of<Personal>()) {
-            user::set_username_internal<Personal>(signer_ref, new_username);
-            // TODO: event
-        } else if (type_info::type_of<Type>() == type_info::type_of<Creator>()) {
-            user::set_username_internal<Creator>(signer_ref, new_username);
-            // TODO: event
-        }
-        else if (type_info::type_of<Type>() == type_info::type_of<Moderator>()) {
-            user::set_username_internal<Moderator>(signer_ref, new_username);
-            // TODO: event
-        } else { assert!(false, 1) };
-    }
-
+    /// Change user type from personal to creator
     public entry fun change_from_personal_to_creator(signer_ref: &signer) {
         user::change_user_type<Personal, Creator>(signer_ref);
         // TODO: event
     }
 
+    /// Change user type from creator to personal
     public entry fun change_from_creator_to_personal(signer_ref: &signer) {
         user::change_user_type<Creator, Personal>(signer_ref);
     }
@@ -205,90 +184,74 @@ module townesquare::core {
     // Accessors
     // ---------
 
-    // Borrow state resource
-    inline fun authorized_state_borrow(addr: address): &State acquires State, Data {
-        user::assert_user_exists(addr);
+    /// Helper function to borrow state resource
+    inline fun get_state(): &State acquires State, Data {
         borrow_global<State>(@townesquare)
     }
 
-    // Borrow data resource; needed to read data
-    inline fun authorized_data_borrow(addr: address): &Data acquires State, Data {
-        // note: no need to assert again.
-        borrow_global<Data>(authorized_state_borrow(addr).core)
-    }
-
-    // Borrow mutable data resource; needed to update data
-    inline fun authorized_data_borrow_mut(addr: address): &mut Data acquires State, Data {
-        borrow_global_mut<Data>(authorized_state_borrow(addr).core)
-    }
-
-    // add new referral code to the data resource
+    // Helper function to add new referral code to the data resource
     inline fun add_referral_code(
-        addr: address, 
         referral_code: String
     ) acquires State, Data {
         // iterate through the vector and return true if the code exists, and false otherwise
         smart_vector::contains<String>(
-            &authorized_data_borrow(authorized_state_borrow(addr).core).referral_codes, 
+            &borrow_global<Data>(get_state().core).referral_codes, 
             &referral_code
             );
         // add the new code to the vector
         smart_vector::push_back<String>(
-            &mut authorized_data_borrow_mut(authorized_state_borrow(addr).core).referral_codes, 
+            &mut borrow_global_mut<Data>(get_state().core).referral_codes, 
             referral_code
         );
     }
 
-    // add username to the data resource
+    /// Helper function to add username to the data resource
     inline fun add_username(
-        addr: address, 
         username: String
     ) acquires State, Data {
         // iterate through the vector and return true if the code exists, and false otherwise
         smart_vector::contains<String>(
-            &authorized_data_borrow(authorized_state_borrow(addr).core).usernames, 
+            &borrow_global<Data>(get_state().core).usernames, 
             &username
             );
 
         // add the new code to the vector
         smart_vector::push_back<String>(
-            &mut authorized_data_borrow_mut(authorized_state_borrow(addr).core).usernames, 
+            &mut borrow_global_mut<Data>(get_state().core).usernames, 
             username
         );
     }
 
-    // remove referral from data
+    /// Helper function to remove referral from data
     inline fun remove_referral(
-        addr: address, 
         referral_code: String
     ) acquires State, Data {
         // iterate through the vector and return true if the code exists, and false otherwise
         let (valid, index) = smart_vector::index_of<String>(
-            &authorized_data_borrow(authorized_state_borrow(addr).core).referral_codes, 
+            &borrow_global<Data>(get_state().core).referral_codes, 
             &referral_code
         );
         assert!(valid == true, 1);
         // remove the code from the vector
         smart_vector::remove<String>(
-            &mut authorized_data_borrow_mut(authorized_state_borrow(addr).core).referral_codes, 
+            &mut borrow_global_mut<Data>(get_state().core).referral_codes, 
             index
             );
     }
 
-    // remove username from data
+    // Helper function to remove username from data
     inline fun remove_username(
-        addr: address, 
         username: String
     ) acquires State, Data {
         // iterate through the vector and return true if the code exists, and false otherwise
         let (valid, index) = smart_vector::index_of<String>(
-            &authorized_data_borrow(authorized_state_borrow(addr).core).usernames, 
+            &borrow_global<Data>(get_state().core).usernames, 
             &username
         );
         assert!(valid == true, 1);
         // remove the code from the vector
         smart_vector::remove<String>(
-            &mut authorized_data_borrow_mut(authorized_state_borrow(addr).core).usernames, 
+            &mut borrow_global_mut<Data>(get_state().core).usernames, 
             index
             );
     }
@@ -298,14 +261,13 @@ module townesquare::core {
     #[test_only]
     use std::string::{Self};
     #[test_only]
-    use std::vector;
-    #[test_only]
     use aptos_framework::timestamp;
     #[test_only]
     use std::features;
 
     #[test_only]
     const USERNAME: vector<u8> = b"username";
+    #[test_only]
     const REFERRAL_CODE: vector<u8> = b"referral_code";
 
     #[test(townesquare = @townesquare)]
