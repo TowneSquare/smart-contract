@@ -19,6 +19,8 @@
     TODO: 
 */
 module townesquare::referral {
+
+    use aptos_framework::event;
     use std::option::{Self, Option};
     use std::signer;
     use std::string::{String};
@@ -32,6 +34,16 @@ module townesquare::referral {
     /// Referral resource
     struct Referral has key {
         code: String,  // typed by user or in the off-chain level
+        referrer: Option<address>
+    }
+
+    // ------
+    // Events
+    // ------
+
+    #[event]
+    struct ReferralCreated has drop, store {
+        code: String,
         referrer: Option<address>
     }
 
@@ -63,30 +75,13 @@ module townesquare::referral {
 
     /// initialize function
     public(friend) fun create_referral(signer_ref: &signer, code: String, referrer: Option<address>) {
-        // add the referral code to the global list; useful to check the code's validity.
-        // referrer typed
-        if (!option::is_none<address>(&mut referrer)) {
-            // assert referrer is a user
-            // TODO user::assert_user_exists(option::extract<address>(referrer));
-            // move referral resource to the signer
-            move_to(
-                signer_ref,
-                Referral {
-                    code: code,
-                    referrer: referrer,
-                }
-            );
-        } else {
-            // move the referral resource to the signer
-            move_to(
-                signer_ref,
-                Referral {
-                    code: code,
-                    referrer: option::none()
-                }
-            );
-            // move tier resource to the signer
-        };
+        move_to(signer_ref, Referral { code, referrer } );
+        event::emit(
+            ReferralCreated {
+                code,
+                referrer
+            }
+        );
     }
     
     /// Remove referral

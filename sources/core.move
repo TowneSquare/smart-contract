@@ -45,7 +45,7 @@ module townesquare::core {
     // Initialize Function
     // -------------------
 
-    public entry fun init(signer_ref: &signer) {
+    fun init_module(signer_ref: &signer) {
         assert!(signer::address_of(signer_ref) == @townesquare, error::permission_denied(1));
         // Create a resource account and store signing capabilities
         let (resource_acc_signer, signer_cap) = account::create_resource_account(signer_ref, TS_DATA_SEED);
@@ -255,8 +255,6 @@ module townesquare::core {
     #[test_only]
     use std::string::{Self};
     #[test_only]
-    use aptos_framework::timestamp;
-    #[test_only]
     use std::features;
 
     #[test_only]
@@ -268,7 +266,7 @@ module townesquare::core {
     public fun init_test(
         townesquare: &signer
     ) {
-        init(townesquare);
+        init_module(townesquare);
     }
 
     #[test(aptos_framework = @0x1, alice = @0x123, townesquare = @townesquare, pfp = @345)]
@@ -278,9 +276,8 @@ module townesquare::core {
         townesquare: &signer,
     ) acquires Data, State {
         features::change_feature_flags(aptos_framework, vector[23, 26], vector[]);
-        timestamp::set_time_has_started_for_testing(aptos_framework);
-        init(townesquare);
-        create_user<Personal>(
+        init_module(townesquare);
+        create_user(
             alice,
             string::utf8(REFERRAL_CODE),
             option::none(), // no referrer
