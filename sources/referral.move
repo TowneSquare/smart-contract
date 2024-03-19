@@ -156,6 +156,13 @@ module townesquare::referral {
         *option::borrow<address>(&referral.referrer)
     }
 
+    #[view]
+    /// Returns true if the signer has a referrer
+    public fun has_referrer(signer_ref: &signer): bool acquires Referral {
+        let referral = borrow_global<Referral>(signer::address_of(signer_ref));
+        !option::is_none<address>(&referral.referrer)
+    }
+
     #[test_only]
     friend townesquare::user;
 
