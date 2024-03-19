@@ -146,20 +146,24 @@ module townesquare::referral {
     // View functions
     // --------------
 
-    // referral
-
-    public fun get_referral_code(signer_ref: &signer, user_addr: address): String acquires Referral {
-        let referral = borrow_global<Referral>(user_addr);
+    #[view]
+    /// Get the referral code of the signer
+    public fun get_referral_code(signer_ref: &signer): String acquires Referral {
+        let referral = borrow_global<Referral>(signer::address_of(signer_ref));
         referral.code
     }
 
-    public fun get_referrer_address(signer_ref: &signer, user_addr: address): address acquires Referral {
-        let referral = borrow_global<Referral>(user_addr);
+    #[view]
+    /// Get the referrer address of the signer
+    public fun get_referrer_address(signer_ref: &signer): address acquires Referral {
+        let referral = borrow_global<Referral>(signer::address_of(signer_ref));
         *option::borrow<address>(&referral.referrer)
     }
 
-    public fun has_referrer(signer_ref: &signer, user_addr: address): (bool, address) acquires Referral {
-        let referral = borrow_global<Referral>(user_addr);
+    #[view]
+    /// Check if the signer has a referrer
+    public fun has_referrer(signer_ref: &signer): (bool, address) acquires Referral {
+        let referral = borrow_global<Referral>(signer::address_of(signer_ref));
         if (option::is_none<address>(&referral.referrer) == false)
         return (true, *option::borrow<address>(&referral.referrer));
         (false, @0x0)

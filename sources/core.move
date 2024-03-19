@@ -1,5 +1,9 @@
 /*
     core module; this will be the entry point for all other modules
+
+    TODO: 
+    - functions visibilty should be private: remove public tag
+    - needs a revisit
 */
 
 module townesquare::core {
@@ -68,7 +72,6 @@ module townesquare::core {
     // Create a new user
     public entry fun create_user<Type>(
         signer_ref: &signer,
-        pfp: address,
         referral_code: String,
         referrer: Option<address>,
         username: String
@@ -80,38 +83,14 @@ module townesquare::core {
             1
         );
         let signer_addr = signer::address_of(signer_ref);
-        // create user based on type
-        if (type_info::type_of<Type>() == type_info::type_of<Personal>()) {
-            user::create_user_internal<Personal>(signer_ref, pfp, username);
-            // create referral and add it to the data resource
-            referral::create_referral(signer_ref, referral_code, referrer);
-            add_referral_code(signer_addr, referral_code);
-            // add username to the data resource
-            add_username(signer_addr, username);
-            // init post resource
-            post::init(signer_ref);
-            // TODO: add event
-        } else if (type_info::type_of<Type>() == type_info::type_of<Creator>()) {
-            user::create_user_internal<Creator>(signer_ref, pfp, username);
-            // create referral and add it to vector
-            referral::create_referral(signer_ref, referral_code, referrer);
-            add_referral_code(signer_addr, referral_code);
-            // add username to the data resource
-            add_username(signer_addr, username);
-            // init post resource
-            post::init(signer_ref);
-            // TODO: add event
-        } else {
-            user::create_user_internal<Moderator>(signer_ref, pfp, username);
-            // create referral and add it to vector
-            referral::create_referral(signer_ref, referral_code, referrer);
-            add_referral_code(signer_addr, referral_code);
-            // add username to the data resource
-            add_username(signer_addr, username);
-            // init post resource
-            post::init(signer_ref);
-            // TODO: add event
-        };
+        user::create_user_internal<Creator>(signer_ref, username);
+        // create referral and add it to vector
+        referral::create_referral(signer_ref, referral_code, referrer);
+        add_referral_code(signer_addr, referral_code);
+        // add username to the data resource
+        add_username(signer_addr, username);
+        // init post resource
+        post::init(signer_ref);
     }
 
     public entry fun add_user_type<Type>(
@@ -170,8 +149,8 @@ module townesquare::core {
         user::delete_user_internal(signer_ref);
         referral::remove_referral(signer_ref);
         // data resource related
-        remove_referral(user_addr, referral::get_referral_code(signer_ref, user_addr));
-        remove_username(user_addr, user::get_personal_username(user_addr));
+        remove_referral(user_addr, referral::get_referral_code(signer_ref));
+        remove_username(user_addr, user::get_username_from_address(user_addr));
         // TODO: add events
     }
 
@@ -209,23 +188,6 @@ module townesquare::core {
         } else { assert!(false, 1) };
     }
 
-    public entry fun change_pfp<Type>(
-        signer_ref: &signer,
-        new_pfp: address
-    ) {
-        // based on type
-        if (type_info::type_of<Type>() == type_info::type_of<Personal>()) {
-            user::set_pfp_internal<Personal>(signer_ref, new_pfp);
-            // TODO: event
-        } else if (type_info::type_of<Type>() == type_info::type_of<Creator>()) {
-            user::set_pfp_internal<Creator>(signer_ref, new_pfp);
-            // TODO: event
-        } else if (type_info::type_of<Type>() == type_info::type_of<Moderator>()) {
-            user::set_pfp_internal<Moderator>(signer_ref, new_pfp);
-            // TODO: event
-        } else { assert!(false, 1) };
-    }
-
     public entry fun change_from_personal_to_creator(signer_ref: &signer) {
         user::change_user_type<Personal, Creator>(signer_ref);
         // TODO: event
@@ -245,6 +207,7 @@ module townesquare::core {
 
     // Borrow state resource
     inline fun authorized_state_borrow(addr: address): &State acquires State, Data {
+        user::assert_user_exists(addr);
         borrow_global<State>(@townesquare)
     }
 
@@ -330,13 +293,15 @@ module townesquare::core {
             );
     }
 
-    // TODO: get referral list; can be gas heavy
-
     #[test_only]
     use std::option;
+    #[test_only]
     use std::string::{Self};
+    #[test_only]
     use std::vector;
+    #[test_only]
     use aptos_framework::timestamp;
+    #[test_only]
     use std::features;
 
     #[test_only]
@@ -355,14 +320,12 @@ module townesquare::core {
         aptos_framework: &signer,
         alice: &signer,
         townesquare: &signer,
-        pfp: address
     ) acquires Data, State {
         features::change_feature_flags(aptos_framework, vector[23, 26], vector[]);
         timestamp::set_time_has_started_for_testing(aptos_framework);
         init(townesquare);
         create_user<Personal>(
             alice,
-            pfp,
             string::utf8(REFERRAL_CODE),
             option::none(), // no referrer
             string::utf8(USERNAME)

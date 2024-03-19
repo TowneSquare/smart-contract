@@ -4,14 +4,15 @@
 
     TODO:
         - add caps so that user can't self-promote to moderator
-        - add unit tests
         - add big table for posts; would be useful in case off chain data is lost
         or in maintenance, in that case, we can get table of posts, it can be costy tho.
         - authorized borrow to moderators and list of connected users
         - organise functions
         - not all of the current funcs that are tagged with #[view] are actually views, fix it
         - create_user_internal should be optimised
-        - assert the pfp is owned by the user
+
+        - add referral? or should it be resource?
+        - username should be immutable.
 */
 
 module townesquare::user {
@@ -23,6 +24,29 @@ module townesquare::user {
     friend townesquare::core;
     friend townesquare::post;
 
+    // ------
+    // Errors
+    // ------
+
+    /// The user already exists
+    const EUSER_EXISTS: u64 = 1;
+    /// The user does not exist
+    const EUSER_DOES_NOT_EXIST: u64 = 2;
+    /// The user is already of the inputted type
+    const EUSER_ALREADY_OF_TYPE: u64 = 3;
+    /// The user type is invalid
+    const EINVALID_USER_TYPE: u64 = 4;
+    /// The user has not the inputted type
+    const EUSER_OF_TYPE_DOES_NOT_EXIST: u64 = 5;
+    /// The caller does not have access permission
+    const EINVALID_ACCESS: u64 = 6;
+    /// The types should be different
+    const ETYPES_SHOULD_BE_DIFFERENT: u64 = 7;
+    /// The user has no type
+    const EUSER_HAS_NO_TYPE: u64 = 8;
+    /// The post tracker does not exist
+    const EPOST_TRACKER_DOES_NOT_EXIST: u64 = 9;
+
     // -------
     // Structs
     // -------
@@ -30,7 +54,6 @@ module townesquare::user {
     /// Storage for user
     struct User has key {
         addr: address,  // immutable for security reasons
-        pfp: address,   // address of nft
         username: String    
     }
 
@@ -59,12 +82,12 @@ module townesquare::user {
 
     #[event]
     /// Event for user creation
-    struct UserCreatedEvent<Type: store + drop> has store, drop {
+    struct UserCreatedEvent has store, drop {
         user_addr: address,
         user_type: String
     }
     fun emit_user_created_event<Type: store + drop>(user_addr: address) {
-        event::emit<UserCreatedEvent<Type>>(
+        event::emit<UserCreatedEvent>(
             UserCreatedEvent {
                 user_addr: user_addr,
                 user_type: type_info::type_name<Type>()
@@ -79,11 +102,9 @@ module townesquare::user {
     /// Create a new user
     public(friend) fun create_user_internal<T: store + drop>(
         signer_ref: &signer,
-        pfp: address,
         username: String
     ) {
         let signer_addr = signer::address_of(signer_ref);
-        // TODO: assert the NFT from pfp is owned by the signer
 
         let user_addr = signer_addr;
         if (!exists<User>(signer_addr)) {
@@ -101,15 +122,14 @@ module townesquare::user {
                 signer_ref,
                 User {
                     addr: signer_addr,
-                    pfp: pfp,
-                    username: username
+                    username,
                 }
             );
         };
         // store based on type
         if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
             // assert personal user doesn't exist
-            assert!(!exists<Personal>(signer_addr), 1);
+            assert!(!exists<Personal>(signer_addr), EUSER_ALREADY_OF_TYPE);
             // move type resource under signer's address
             move_to(signer_ref, Personal {});
         } else if (type_info::type_of<T>() == type_info::type_of<Creator>()) {
@@ -117,7 +137,7 @@ module townesquare::user {
             move_to(signer_ref, Creator {});
         } else {
             // assert moderator user doesn't exist
-            assert!(!exists<Moderator>(signer_addr), 1);
+            assert!(!exists<Moderator>(signer_addr), EUSER_ALREADY_OF_TYPE);
             // move type resource under signer's address
             move_to(signer_ref, Moderator {});
         };
@@ -135,23 +155,23 @@ module townesquare::user {
         // store based on type
         if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
             // assert user doesn't exist under this type
-            assert!(!exists<Personal>(signer_addr), 1);
+            assert!(!exists<Personal>(signer_addr), EUSER_ALREADY_OF_TYPE);
             move_to(signer_ref, Personal {});
         } else if (type_info::type_of<T>() == type_info::type_of<Creator>()) {
             // assert user doesn't exist under this type
-            assert!(!exists<Creator>(signer_addr), 1);
+            assert!(!exists<Creator>(signer_addr), EUSER_ALREADY_OF_TYPE);
             move_to(signer_ref, Creator {});
         } else if (type_info::type_of<T>() == type_info::type_of<Moderator>()) {
             // assert signer is moderator or ts
             assert!(
                 exists<Moderator>(signer_addr) ||
                 signer_addr == @townesquare,
-                1
+                EINVALID_ACCESS
             );
             // assert user doesn't exist under this type
-            assert!(!exists<Moderator>(signer_addr), 1);
+            assert!(!exists<Moderator>(signer_addr), EUSER_ALREADY_OF_TYPE);
             move_to(signer_ref, Moderator {});
-        } else { assert!(false, 1); }
+        } else { abort(EINVALID_USER_TYPE) }
     }
 
     /// Delete a user type
@@ -164,38 +184,38 @@ module townesquare::user {
         // based on type
         if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
             // assert user does exist under this type
-            assert!(exists<Personal>(signer_addr), 1);
+            assert!(exists<Personal>(signer_addr), EUSER_OF_TYPE_DOES_NOT_EXIST);
             // assert user has atleast one type
             assert!(
                 exists<Creator>(signer_addr) ||
                 exists<Moderator>(signer_addr),
-                1
+                EUSER_HAS_NO_TYPE
             );
             // remove T type from user
             Personal {} = move_from<Personal>(signer_addr);
         } else if (type_info::type_of<T>() == type_info::type_of<Creator>()) {
             // assert user does exist under this type
-            assert!(exists<Creator>(signer_addr), 1);
+            assert!(exists<Creator>(signer_addr), EUSER_OF_TYPE_DOES_NOT_EXIST);
             // assert user has atleast one type
             assert!(
                 exists<Personal>(signer_addr) ||
                 exists<Moderator>(signer_addr),
-                1
+                EUSER_HAS_NO_TYPE
             );
             // remove T type from user
             Creator {} = move_from<Creator>(signer_addr);
         } else if (type_info::type_of<T>() == type_info::type_of<Moderator>()) {
             // assert user does exist under this type
-            assert!(exists<Moderator>(signer_addr), 1);
+            assert!(exists<Moderator>(signer_addr), EUSER_OF_TYPE_DOES_NOT_EXIST);
             // assert user has atleast one type
             assert!(
                 exists<Personal>(signer_addr) ||
                 exists<Creator>(signer_addr),
-                1
+                EUSER_HAS_NO_TYPE
             );
             // remove T type from user
             Moderator {} = move_from<Moderator>(signer_addr);
-        } else { assert!(false, 1); }
+        } else { abort(EINVALID_USER_TYPE) }
     }
 
     /// Delete a user alongside all its types
@@ -216,7 +236,7 @@ module townesquare::user {
             Moderator {} = move_from<Moderator>(signer_addr);
         };
         // delete user resource
-        User { addr: _, pfp: _, username: _ } = move_from<User>(signer_addr);
+        User { addr: _, username: _ } = move_from<User>(signer_addr);
         // delete post tracker
         delete_post_tracker(signer_ref);
         // TODO: delete posts; should be done in core
@@ -232,7 +252,7 @@ module townesquare::user {
             exists<Personal>(addr) ||
             exists<Creator>(addr) ||
             exists<Moderator>(addr),
-            1
+            EUSER_DOES_NOT_EXIST
         );
     }
 
@@ -242,7 +262,7 @@ module townesquare::user {
             !exists<Personal>(addr) &&
             !exists<Creator>(addr) &&
             !exists<Moderator>(addr),
-            1
+            EUSER_EXISTS
         );
     }
 
@@ -276,7 +296,7 @@ module townesquare::user {
 
     /// Change user's activity status from X to Y
     fun change_activity_status<X, Y>(signer_ref: &signer) acquires Active, Inactive {
-        assert!(type_info::type_of<X>() != type_info::type_of<Y>(), 1);
+        assert!(type_info::type_of<X>() != type_info::type_of<Y>(), ETYPES_SHOULD_BE_DIFFERENT);
         // from Inactive to Active
         if ( type_info::type_of<X>() == type_info::type_of<Inactive>() ) {  
             // TODO: assert atleast one transaction has been made from the signer's address
@@ -286,27 +306,12 @@ module townesquare::user {
         } else if ( type_info::type_of<X>() == type_info::type_of<Active>()) {
             move_to(signer_ref, Inactive {});
             Active {} = move_from<Active>(signer::address_of(signer_ref));
-        } else { assert!(false, 2); }
+        } else { abort(EINVALID_USER_TYPE) }
     }
 
     // --------------
     // View Functions
     // --------------
-
-    // TODO
-    // #[view]
-    // // Get signer's User based on type; callable by anyone using ts
-
-    // TODO
-    // #[view]
-    // // Get all user types; callable by anyone using ts
-    /// public entry fun get_all_user_types(signer_ref: &signer): vector {
-    //     let signer_addr = signer::address_of(signer_ref);
-    //     assert_user_exists(signer_addr);
-    //     let user_types = vector::empty<User>();
-        
-    //     user_types
-    // }
 
     // User
     #[view]
@@ -314,13 +319,12 @@ module townesquare::user {
     public fun get_personal_from_address(
         maybe_user_addr: address
     ): (User, Personal) acquires User {
-        assert!(exists<User>(maybe_user_addr), 1);    // user does not exist under this type
+        assert_user_exists(maybe_user_addr);
         let user_resource = borrow_global<User>(maybe_user_addr);
         (
             User {
-            addr: user_resource.addr,
-            pfp: user_resource.pfp,
-            username: user_resource.username
+                addr: user_resource.addr,
+                username: user_resource.username
             }, Personal {}
         )
     }
@@ -330,14 +334,13 @@ module townesquare::user {
     public fun get_creator_from_address(
         maybe_user_addr: address
     ): (User, Creator)acquires User {
-        assert!(exists<User>(maybe_user_addr), 1);
-        assert!(exists<Creator>(maybe_user_addr), 1); // user does not exist under this type
+        assert_user_exists(maybe_user_addr);
+        assert!(exists<Creator>(maybe_user_addr), EUSER_OF_TYPE_DOES_NOT_EXIST);
         let user_resource = borrow_global<User>(maybe_user_addr);
         (
             User {
-            addr: user_resource.addr,
-            pfp: user_resource.pfp,
-            username: user_resource.username
+                addr: user_resource.addr,
+                username: user_resource.username
             }, Creator {}
         )
     }
@@ -347,69 +350,33 @@ module townesquare::user {
     public fun get_moderator_from_address(
         maybe_user_addr: address
     ): (User, Moderator) acquires User {
-        assert!(exists<User>(maybe_user_addr), 1);    // user does not exist under this type
+        assert_user_exists(maybe_user_addr);
         let user_resource = borrow_global<User>(maybe_user_addr);
         (
             User {
                 addr: user_resource.addr,
-                pfp: user_resource.pfp,
                 username: user_resource.username
             }, Moderator {}
         )
     }
 
     #[view]
-    /// Get personal username from address
-    public fun get_personal_username(
-        maybe_user: address
-    ): String acquires User {
-        assert!(is_user_of_type<Personal>(maybe_user), 1);   
-        borrow_global<User>(maybe_user).username
+    /// Get username
+    public fun get_username_from_address(user_addr: address): String acquires User {
+        // assert user exists
+        assert_user_exists(user_addr);
+        borrow_global<User>(user_addr).username
     }
-
-    #[view]
-    /// Get creator username from address
-    public fun get_creator_username(
-        maybe_user: address
-    ): String acquires User {
-        assert!(is_user_of_type<Creator>(maybe_user), 1);  
-        borrow_global<User>(maybe_user).username
-    }
-
-    #[view]
-    /// Get moderator username from address
-    public fun get_moderator_username(
-        maybe_user: address
-    ): String acquires User {
-        assert!(is_user_of_type<Moderator>(maybe_user), 1);  
-        borrow_global<User>(maybe_user).username
-    }
-
-    #[view]
-    /// Get personal pfp from address
-    public fun get_personal_pfp(
-        maybe_user: address
-    ): address acquires User {
-        assert!(is_user_of_type<Personal>(maybe_user), 1);  
-        borrow_global<User>(maybe_user).pfp
-    }
-
-    // TODO: get creator pfp from address
-    // TODO: get moderator pfp from address
 
     #[view]
     /// verify an address is a user giving type and address; callable by anyone
     public fun is_user(
         addr: address
-    ): bool {
-        exists<User>(addr)
-    }
+    ): bool { exists<User>(addr) }
 
     #[view]
     /// User exists and of type T
-    public fun is_user_of_type<T>(
-        maybe_user_addr: address
-    ): bool {
+    public fun is_user_of_type<T>(maybe_user_addr: address): bool {
         if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
             exists<Personal>(maybe_user_addr)
         } else if (type_info::type_of<T>() == type_info::type_of<Creator>()) {
@@ -419,16 +386,12 @@ module townesquare::user {
         } else { false }
     }
 
-    // #[view]
-    // return all user's types
-    // TODO
-
     #[view]
     /// Returns the total number of posts created by a user; TODO: callable by anyone?
     public fun get_created_posts_total_number(
         user_addr: address
     ): u64 acquires PostTracker {
-        assert!(exists<PostTracker>(user_addr), 1);
+        assert!(exists<PostTracker>(user_addr), EPOST_TRACKER_DOES_NOT_EXIST);
         borrow_global<PostTracker>(user_addr).total_posts_created
     }
 
@@ -469,35 +432,15 @@ module townesquare::user {
         let user = borrow_global_mut<User>(signer_addr);
         // based on type
         if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
-            assert!(exists<Personal>(signer_addr), 1); 
+            assert!(exists<Personal>(signer_addr), EUSER_OF_TYPE_DOES_NOT_EXIST);
             user.username = new_username;
         } else if (type_info::type_of<T>() == type_info::type_of<Creator>()) {
-            assert!(exists<Creator>(signer_addr), 1);
+            assert!(exists<Creator>(signer_addr), EUSER_OF_TYPE_DOES_NOT_EXIST);
             user.username = new_username;
         } else if (type_info::type_of<T>() == type_info::type_of<Moderator>()) {
-            assert!(exists<Moderator>(signer_addr), 1);
+            assert!(exists<Moderator>(signer_addr), EUSER_OF_TYPE_DOES_NOT_EXIST);
             user.username = new_username;
-        } else { assert!(false, 1); }
-    }
-
-    /// Change pfp 
-    public(friend) fun set_pfp_internal<T: drop + store + key>(
-        signer_ref: &signer,
-        new_pfp: address
-    ) acquires User {
-        let signer_addr = signer::address_of(signer_ref);
-        let user = borrow_global_mut<User>(signer_addr);
-        // based on type
-        if (type_info::type_of<T>() == type_info::type_of<Personal>()) {
-            assert!(exists<Personal>(signer_addr), 1); 
-            user.pfp = new_pfp;
-        } else if (type_info::type_of<T>() == type_info::type_of<Creator>()) {
-            assert!(exists<Creator>(signer_addr), 1); 
-            user.pfp = new_pfp;
-        } else if (type_info::type_of<T>() == type_info::type_of<Moderator>()) {
-            assert!(exists<Moderator>(signer_addr), 1); 
-            user.pfp = new_pfp;
-        } else { assert!(false, 1); }
+        } else { abort(EINVALID_USER_TYPE) }
     }
 
     /// Change user type from X to Y
@@ -508,12 +451,14 @@ module townesquare::user {
         // user exists
         assert_user_exists(signer_addr);
         // X and Y should be different types
-        assert!(type_info::type_of<X>() != type_info::type_of<Y>(), 1);
+        assert!(type_info::type_of<X>() != type_info::type_of<Y>(), ETYPES_SHOULD_BE_DIFFERENT);
+        // Y should not be Moderator
+        assert!(type_info::type_of<Y>() != type_info::type_of<Moderator>(), EINVALID_USER_TYPE);
         // if X is personal
         if (type_info::type_of<X>() == type_info::type_of<Personal>()) {
             // assert user is personal
-            assert!(exists<Personal>(signer_addr), 1); // already Personal user
-            assert!(!exists<Creator>(signer_addr), 1); // not Creator user
+            assert!(exists<Personal>(signer_addr), EUSER_OF_TYPE_DOES_NOT_EXIST); // already Personal user
+            assert!(!exists<Creator>(signer_addr), EUSER_ALREADY_OF_TYPE); // not Creator user
             // add Y type to user
             add_user_type_internal<Personal>(signer_ref);
             // remove X type from user
@@ -521,16 +466,13 @@ module townesquare::user {
 
         // if X is Creator
         } else if (type_info::type_of<X>() == type_info::type_of<Creator>()) {
-            assert!(exists<Creator>(signer_addr), 1); // already Creator user
-            assert!(!exists<Personal>(signer_addr), 1); // not Personal user
+            assert!(exists<Creator>(signer_addr), EUSER_OF_TYPE_DOES_NOT_EXIST); // already Creator user
+            assert!(!exists<Personal>(signer_addr), EUSER_ALREADY_OF_TYPE); // not Personal user
             // add Y type to user
             add_user_type_internal<Personal>(signer_ref);
             // remove X type from user
             delete_user_type_internal<X>(signer_ref);
         }
-        // if X is creator
-        // TODO
-        
     }
 
     /// Change user's activity status from Inactive to Active
@@ -570,7 +512,7 @@ module townesquare::user {
         signer_ref: &signer
     ) acquires PostTracker {
         let signer_addr = signer::address_of(signer_ref);
-        assert!(exists<PostTracker>(signer_addr), 1);
+        assert!(exists<PostTracker>(signer_addr), EPOST_TRACKER_DOES_NOT_EXIST);
         let post_tracker = move_from<PostTracker>(signer_addr);
         let PostTracker { user_addr: _, total_posts_created: _ } = post_tracker;
     }
@@ -579,13 +521,17 @@ module townesquare::user {
     // ----------
     // Unit Tests
     // ----------
- 
+
+    #[test_only]
+    use aptos_framework::account;
+    #[test_only]
+    use aptos_framework::aptos_coin::AptosCoin;
+    #[test_only]
+    use aptos_framework::managed_coin;
+    #[test_only]
+    use std::option;
     #[test_only]
     use townesquare::referral;
-    use aptos_framework::aptos_coin::{AptosCoin};
-    use std::option;
-    use aptos_framework::account;
-    use aptos_framework::managed_coin;
 
     /* 
         ----------------------------- Private tests --------------------------------
@@ -596,7 +542,7 @@ module townesquare::user {
     #[test(user = @0x123)]
     // create personal user
     fun create_personal_user_test(user: &signer) acquires PostTracker {
-        create_user_internal<Personal>(user, @0x0, string::utf8(b"test"));
+        create_user_internal<Personal>(user, string::utf8(b"test"));
         // assert user exists
         assert_user_exists(signer::address_of(user));
         // assert user is of type Personal and not of type Creator or Moderator
@@ -613,7 +559,7 @@ module townesquare::user {
     #[test(user = @0x123)]
     // create creator user
     fun create_creator_user_test(user: &signer) acquires PostTracker {
-        create_user_internal<Creator>(user, @0x0, string::utf8(b"test"));
+        create_user_internal<Creator>(user, string::utf8(b"test"));
         // assert user exists
         assert_user_exists(signer::address_of(user));
         // assert user is of type Creator and not of type Personal or Moderator
@@ -630,7 +576,7 @@ module townesquare::user {
     #[test(user = @0x123)]
     // create moderator user
     fun create_moderator_user_test_(user: &signer) acquires PostTracker {
-        create_user_internal<Moderator>(user, @0x0, string::utf8(b"test"));
+        create_user_internal<Moderator>(user, string::utf8(b"test"));
         // assert user exists
         assert_user_exists(signer::address_of(user));
         // assert user is of type Moderator and not of type Personal or Creator
@@ -708,7 +654,7 @@ module townesquare::user {
         account::create_account_for_test(signer::address_of(user));
         managed_coin::register<AptosCoin>(user);
         // TODO: should not be using internal func
-        create_user_internal<Personal>(user, @0x0, string::utf8(b"test"));
+        create_user_internal<Personal>(user, string::utf8(b"test"));
         // Create referral; doesn't have referral so returns none
         referral::create_referral(user, string::utf8(b"test"), option::none());
         assert!(exists<Personal>(signer::address_of(user)), 1);
@@ -720,7 +666,7 @@ module townesquare::user {
         account::create_account_for_test(signer::address_of(user));
         managed_coin::register<AptosCoin>(user);
         // TODO: should not be using internal func
-        create_user_internal<Personal>(user, @0x0, string::utf8(b"test"));
+        create_user_internal<Personal>(user, string::utf8(b"test"));
         // Create referral
         let referrer = option::none<address>();
         option::fill<address>(&mut referrer, referrer_addr);
@@ -732,7 +678,7 @@ module townesquare::user {
     public fun create_moderator_user_test(user: &signer) {
         account::create_account_for_test(signer::address_of(user));
         managed_coin::register<AptosCoin>(user);
-        create_user_internal<Moderator>(user, @0x0, string::utf8(b"test"));
+        create_user_internal<Moderator>(user, string::utf8(b"test"));
         // Create referral; doesn't have referral so returns none
         referral::create_referral(user, string::utf8(b"test"), option::none());
         assert!(exists<Moderator>(signer::address_of(user)), 1);
@@ -743,7 +689,7 @@ module townesquare::user {
     public fun delete_user_test(
         user: &signer
     ) acquires Creator, Moderator, Personal, PostTracker, User {
-        create_user_internal<Personal>(user, @0x0, string::utf8(b"test"));
+        create_user_internal<Personal>(user, string::utf8(b"test"));
         add_user_type_internal<Creator>(user);
         // assert user exists
         is_user_of_type<Personal>(signer::address_of(user));
@@ -759,7 +705,7 @@ module townesquare::user {
     #[test(user = @0x123)]
     // change activity status
     public fun change_activity_status_test(user: &signer) acquires Active, Inactive {
-        create_user_internal<Personal>(user, @0x0, string::utf8(b"test"));
+        create_user_internal<Personal>(user, string::utf8(b"test"));
         // assert user is inactive
         assert!(address_is_inactive(signer::address_of(user)), 1);
         // change activity status from inactive to active

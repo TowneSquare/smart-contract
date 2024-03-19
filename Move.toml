@@ -3,7 +3,7 @@ name = "Townesquare"
 version = "0.2.1"
 
 [addresses]
-townesquare = "0x6b7c8681599cd9f305df89719b99be9ae141f009610bc5f2baea8507be99ff81"
+townesquare = "0x87421490ff3712fe34926bef989f92e9fc2a6900e98cf6c712ea97aaf67218c4"
 
 
 [dependencies.AptosFramework]

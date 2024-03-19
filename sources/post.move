@@ -155,6 +155,7 @@ module townesquare::post {
 
     #[test_only]
     use std::features;
+    #[test_only]
     use std::vector;
 
     #[test_only]
