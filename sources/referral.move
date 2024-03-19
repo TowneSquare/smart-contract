@@ -17,9 +17,6 @@
     | Tier 6        | 135 (35% bonus) | 200-201+       |
 
     TODO: 
-        - implement the referrer logic 
-        - get referrer address must be conditional since not all users have referrers
-        - set funcs visibity
 */
 module townesquare::referral {
     use std::option::{Self, Option};
@@ -32,7 +29,7 @@ module townesquare::referral {
     // Structs
     // -------
 
-    // Referral resource
+    /// Referral resource
     struct Referral has key {
         code: String,  // typed by user or in the off-chain level
         referrer: Option<address>
@@ -64,8 +61,7 @@ module townesquare::referral {
     // Public functions
     // ----------------
 
-    // initialize function; used in (user/core?), initialize the referral resource when 
-    // a user signs up for the platform. All users start as inactive, and with a referral code.
+    /// initialize function
     public(friend) fun create_referral(signer_ref: &signer, code: String, referrer: Option<address>) {
         // add the referral code to the global list; useful to check the code's validity.
         // referrer typed
@@ -93,7 +89,7 @@ module townesquare::referral {
         };
     }
     
-    // Remove referral
+    /// Remove referral
     public(friend) fun remove_referral(signer_ref: &signer) acquires Referral {
         let user_addr = signer::address_of(signer_ref);
         // assert referral exists under signer address
@@ -131,12 +127,12 @@ module townesquare::referral {
 
     // Referral
 
-    // get referral code
+    /// get referral code
     public fun referral(referral: &Referral): String {
         referral.code
     }
 
-    // get referrer address
+    /// get referrer address
     public fun referrer(referral: &Referral): address {
         assert!(!option::is_none<address>(&referral.referrer), 1);
         *option::borrow<address>(&referral.referrer)
@@ -158,15 +154,6 @@ module townesquare::referral {
     public fun get_referrer_address(signer_ref: &signer): address acquires Referral {
         let referral = borrow_global<Referral>(signer::address_of(signer_ref));
         *option::borrow<address>(&referral.referrer)
-    }
-
-    #[view]
-    /// Check if the signer has a referrer
-    public fun has_referrer(signer_ref: &signer): (bool, address) acquires Referral {
-        let referral = borrow_global<Referral>(signer::address_of(signer_ref));
-        if (option::is_none<address>(&referral.referrer) == false)
-        return (true, *option::borrow<address>(&referral.referrer));
-        (false, @0x0)
     }
 
     #[test_only]

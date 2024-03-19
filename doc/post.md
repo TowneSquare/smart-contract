@@ -1,24 +1,24 @@
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post"></a>
 
-# Module `0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088::post`
+# Module `0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0::post`
 
 
 
--  [Resource `PostData`](#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostData)
--  [Resource `PostDeleteRef`](#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostDeleteRef)
--  [Struct `PostMetadata`](#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostMetadata)
--  [Struct `PostStateGroup`](#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostStateGroup)
--  [Resource `PostState`](#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostState)
--  [Resource `Public`](#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_Public)
--  [Resource `Private`](#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_Private)
+-  [Resource `PostData`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostData)
+-  [Resource `PostDeleteRef`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostDeleteRef)
+-  [Struct `PostMetadata`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostMetadata)
+-  [Struct `PostStateGroup`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostStateGroup)
+-  [Resource `PostState`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostState)
+-  [Resource `Public`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_Public)
+-  [Resource `Private`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_Private)
 -  [Constants](#@Constants_0)
--  [Function `init`](#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_init)
--  [Function `create_post_internal`](#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_create_post_internal)
--  [Function `is_post`](#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_is_post)
--  [Function `get_post_id`](#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_get_post_id)
--  [Function `is_post_public`](#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_is_post_public)
--  [Function `is_post_private`](#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_is_post_private)
+-  [Function `init`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_init)
+-  [Function `create_post_internal`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_create_post_internal)
+-  [Function `is_post`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_is_post)
+-  [Function `get_post_id`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_get_post_id)
+-  [Function `is_post_public`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_is_post_public)
+-  [Function `is_post_private`](#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_is_post_private)
 
 
 <pre><code><b>use</b> <a href="">0x1::error</a>;
@@ -30,86 +30,86 @@
 
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostData"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostData"></a>
 
 ## Resource `PostData`
 
 
 
 <pre><code>#[resource_group_member(#[group = <a href="_ObjectGroup">0x1::object::ObjectGroup</a>])]
-<b>struct</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostData">PostData</a> <b>has</b> key
+<b>struct</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostData">PostData</a> <b>has</b> key
 </code></pre>
 
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostDeleteRef"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostDeleteRef"></a>
 
 ## Resource `PostDeleteRef`
 
 
 
 <pre><code>#[resource_group_member(#[group = <a href="_ObjectGroup">0x1::object::ObjectGroup</a>])]
-<b>struct</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostDeleteRef">PostDeleteRef</a> <b>has</b> key
+<b>struct</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostDeleteRef">PostDeleteRef</a> <b>has</b> key
 </code></pre>
 
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostMetadata"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostMetadata"></a>
 
 ## Struct `PostMetadata`
 
 
 
 <pre><code>#[<a href="">event</a>]
-<b>struct</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostMetadata">PostMetadata</a> <b>has</b> drop, store
+<b>struct</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostMetadata">PostMetadata</a> <b>has</b> drop, store
 </code></pre>
 
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostStateGroup"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostStateGroup"></a>
 
 ## Struct `PostStateGroup`
 
 
 
 <pre><code>#[resource_group(#[scope = module_])]
-<b>struct</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostStateGroup">PostStateGroup</a>
+<b>struct</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostStateGroup">PostStateGroup</a>
 </code></pre>
 
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostState"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostState"></a>
 
 ## Resource `PostState`
 
 
 
-<pre><code>#[resource_group_member(#[group = <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostStateGroup">0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088::post::PostStateGroup</a>])]
-<b>struct</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostState">PostState</a> <b>has</b> key
+<pre><code>#[resource_group_member(#[group = <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostStateGroup">0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0::post::PostStateGroup</a>])]
+<b>struct</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostState">PostState</a> <b>has</b> key
 </code></pre>
 
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_Public"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_Public"></a>
 
 ## Resource `Public`
 
 
 
-<pre><code>#[resource_group_member(#[group = <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostStateGroup">0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088::post::PostStateGroup</a>])]
-<b>struct</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_Public">Public</a> <b>has</b> key
+<pre><code>#[resource_group_member(#[group = <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostStateGroup">0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0::post::PostStateGroup</a>])]
+<b>struct</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_Public">Public</a> <b>has</b> key
 </code></pre>
 
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_Private"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_Private"></a>
 
 ## Resource `Private`
 
 
 
-<pre><code>#[resource_group_member(#[group = <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_PostStateGroup">0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088::post::PostStateGroup</a>])]
-<b>struct</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_Private">Private</a> <b>has</b> key
+<pre><code>#[resource_group_member(#[group = <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_PostStateGroup">0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0::post::PostStateGroup</a>])]
+<b>struct</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_Private">Private</a> <b>has</b> key
 </code></pre>
 
 
@@ -119,86 +119,86 @@
 ## Constants
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_ERROR_INVALID_POST_VISIBILITY"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_ERROR_INVALID_POST_VISIBILITY"></a>
 
 The post visibility is invalid
 
 
-<pre><code><b>const</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_ERROR_INVALID_POST_VISIBILITY">ERROR_INVALID_POST_VISIBILITY</a>: u64 = 0;
+<pre><code><b>const</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_ERROR_INVALID_POST_VISIBILITY">ERROR_INVALID_POST_VISIBILITY</a>: u64 = 0;
 </code></pre>
 
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_ERROR_POST_DOES_NOT_EXIST"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_ERROR_POST_DOES_NOT_EXIST"></a>
 
 The post does not exist
 
 
-<pre><code><b>const</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_ERROR_POST_DOES_NOT_EXIST">ERROR_POST_DOES_NOT_EXIST</a>: u64 = 1;
+<pre><code><b>const</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_ERROR_POST_DOES_NOT_EXIST">ERROR_POST_DOES_NOT_EXIST</a>: u64 = 1;
 </code></pre>
 
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_init"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_init"></a>
 
 ## Function `init`
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_init">init</a>(ts: &<a href="">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_init">init</a>(ts: &<a href="">signer</a>)
 </code></pre>
 
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_create_post_internal"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_create_post_internal"></a>
 
 ## Function `create_post_internal`
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_create_post_internal">create_post_internal</a>&lt;Visibility&gt;(signer_ref: &<a href="">signer</a>, content: <a href="">vector</a>&lt;u8&gt;): u64
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_create_post_internal">create_post_internal</a>&lt;Visibility&gt;(signer_ref: &<a href="">signer</a>, content: <a href="">vector</a>&lt;u8&gt;): u64
 </code></pre>
 
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_is_post"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_is_post"></a>
 
 ## Function `is_post`
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_is_post">is_post</a>&lt;T: key&gt;(obj: <a href="_Object">object::Object</a>&lt;T&gt;): bool
+<pre><code><b>public</b> <b>fun</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_is_post">is_post</a>&lt;T: key&gt;(obj: <a href="_Object">object::Object</a>&lt;T&gt;): bool
 </code></pre>
 
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_get_post_id"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_get_post_id"></a>
 
 ## Function `get_post_id`
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_get_post_id">get_post_id</a>&lt;T: key&gt;(obj: <a href="_Object">object::Object</a>&lt;T&gt;): u64
+<pre><code><b>public</b> <b>fun</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_get_post_id">get_post_id</a>&lt;T: key&gt;(obj: <a href="_Object">object::Object</a>&lt;T&gt;): u64
 </code></pre>
 
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_is_post_public"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_is_post_public"></a>
 
 ## Function `is_post_public`
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_is_post_public">is_post_public</a>&lt;T: key&gt;(obj: <a href="_Object">object::Object</a>&lt;T&gt;): bool
+<pre><code><b>public</b> <b>fun</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_is_post_public">is_post_public</a>&lt;T: key&gt;(obj: <a href="_Object">object::Object</a>&lt;T&gt;): bool
 </code></pre>
 
 
 
-<a id="0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_is_post_private"></a>
+<a id="0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_is_post_private"></a>
 
 ## Function `is_post_private`
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="post.md#0x80f9e1784ca31b1158e5b17025eb1e42067d5a2313ad4a4a145e14f56c6ca088_post_is_post_private">is_post_private</a>&lt;T: key&gt;(obj: <a href="_Object">object::Object</a>&lt;T&gt;): bool
+<pre><code><b>public</b> <b>fun</b> <a href="post.md#0x94adf62d48b39cdbf86dc7acef765ae70fc659508e4d8873b91c9566f01e07f0_post_is_post_private">is_post_private</a>&lt;T: key&gt;(obj: <a href="_Object">object::Object</a>&lt;T&gt;): bool
 </code></pre>
