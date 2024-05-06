@@ -8,6 +8,6 @@ townesquare = "0xc2d6a2f68f1749d9ab689b3e81c9e94dbea13cb34ced94bf7e07de5479fc4ad
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"
-rev = "mainnet"
+rev = "main"
 subdir = "aptos-move/framework/aptos-framework"
 
